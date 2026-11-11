@@ -13,7 +13,7 @@ import androidx.core.view.WindowCompat
 private val DarkColorScheme = darkColorScheme(
     primary = BorderActive,
     onPrimary = BgApp,
-    primaryContainer = BgSurfaceHover,
+    primaryContainer = BgGlassHover,
     onPrimaryContainer = TextPrimary,
     secondary = StatusNormal,
     onSecondary = BgApp,
@@ -21,7 +21,7 @@ private val DarkColorScheme = darkColorScheme(
     onBackground = TextPrimary,
     surface = BgSurface,
     onSurface = TextPrimary,
-    surfaceVariant = BgSurfaceHover,
+    surfaceVariant = BgGlassHover,
     onSurfaceVariant = TextSecondary,
     outline = BorderSubtle,
     error = StatusCritical,

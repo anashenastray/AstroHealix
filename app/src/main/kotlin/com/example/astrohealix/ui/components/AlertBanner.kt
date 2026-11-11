@@ -76,9 +76,9 @@ fun AlertBanner(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(cardBg)
-            .border(1.dp, borderColor.copy(alpha = 0.6f), RoundedCornerShape(6.dp))
+            .border(1.dp, borderColor.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
     ) {
         // Left 4dp solid status accent bar
         Box(

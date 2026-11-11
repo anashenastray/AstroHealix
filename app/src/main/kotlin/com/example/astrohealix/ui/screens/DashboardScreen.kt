@@ -55,6 +55,8 @@ import com.example.astrohealix.ui.theme.BgApp
 import com.example.astrohealix.ui.theme.BgSurface
 import com.example.astrohealix.ui.theme.BorderActive
 import com.example.astrohealix.ui.theme.BorderSubtle
+import com.example.astrohealix.ui.theme.GlassCardBorderBrush
+import com.example.astrohealix.ui.theme.GlassCardFillBrush
 import com.example.astrohealix.ui.theme.StatusNormal
 import com.example.astrohealix.ui.theme.TextPrimary
 import com.example.astrohealix.ui.theme.TextSecondary
@@ -184,9 +186,9 @@ fun DashboardScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(BgSurface)
-                        .border(1.dp, BorderSubtle, RoundedCornerShape(6.dp))
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(GlassCardFillBrush)
+                        .border(1.dp, GlassCardBorderBrush, RoundedCornerShape(8.dp))
                         .clickable { onNavigateToBodyMap() }
                         .padding(10.dp)
                 ) {
@@ -294,9 +296,9 @@ private fun CockpitReadinessCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(6.dp))
-            .background(BgSurface)
-            .border(1.dp, BorderSubtle, RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(8.dp))
+            .background(GlassCardFillBrush)
+            .border(1.dp, GlassCardBorderBrush, RoundedCornerShape(8.dp))
             .padding(10.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {

@@ -40,6 +40,8 @@ import com.example.astrohealix.ui.theme.BgApp
 import com.example.astrohealix.ui.theme.BgSurface
 import com.example.astrohealix.ui.theme.BorderActive
 import com.example.astrohealix.ui.theme.BorderSubtle
+import com.example.astrohealix.ui.theme.GlassCardBorderBrush
+import com.example.astrohealix.ui.theme.GlassCardFillBrush
 import com.example.astrohealix.ui.theme.StatusCritical
 import com.example.astrohealix.ui.theme.StatusMonitor
 import com.example.astrohealix.ui.theme.StatusNormal
@@ -68,8 +70,8 @@ fun TrendChart(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .background(BgSurface)
-            .border(1.dp, BorderSubtle, RoundedCornerShape(8.dp))
+            .background(GlassCardFillBrush)
+            .border(1.dp, GlassCardBorderBrush, RoundedCornerShape(8.dp))
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {

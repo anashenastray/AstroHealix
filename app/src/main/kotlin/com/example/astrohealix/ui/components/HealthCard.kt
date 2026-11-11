@@ -33,6 +33,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -45,6 +48,8 @@ import com.example.astrohealix.ui.theme.BgSurface
 import com.example.astrohealix.ui.theme.BorderActive
 import com.example.astrohealix.ui.theme.BorderSubtle
 import com.example.astrohealix.ui.theme.CriticalSurfaceGlow
+import com.example.astrohealix.ui.theme.GlassCardBorderBrush
+import com.example.astrohealix.ui.theme.GlassCardFillBrush
 import com.example.astrohealix.ui.theme.MonitorSurfaceGlow
 import com.example.astrohealix.ui.theme.StatusCritical
 import com.example.astrohealix.ui.theme.StatusMonitor
@@ -87,19 +92,25 @@ fun HealthCard(
         VitalId.BONE_EXERCISE_MIN -> Icons.Default.FitnessCenter
     }
 
+    val cardFillBrush: Brush = when (snapshot.status) {
+        VitalStatus.CRITICAL -> Brush.verticalGradient(listOf(CriticalSurfaceGlow, Color(0x221A0A10)))
+        VitalStatus.MONITOR -> Brush.verticalGradient(listOf(MonitorSurfaceGlow, Color(0x221A1408)))
+        else -> GlassCardFillBrush
+    }
+
+    val cardBorderBrush: Brush = when (snapshot.status) {
+        VitalStatus.CRITICAL -> SolidColor(StatusCritical.copy(alpha = 0.6f))
+        VitalStatus.MONITOR -> SolidColor(StatusMonitor.copy(alpha = 0.5f))
+        else -> GlassCardBorderBrush
+    }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = 112.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(cardBg)
-            .border(
-                1.dp,
-                if (snapshot.status == VitalStatus.CRITICAL) StatusCritical.copy(alpha = 0.6f)
-                else if (snapshot.status == VitalStatus.MONITOR) StatusMonitor.copy(alpha = 0.5f)
-                else BorderSubtle,
-                RoundedCornerShape(6.dp)
-            )
+            .clip(RoundedCornerShape(8.dp))
+            .background(cardFillBrush)
+            .border(1.dp, cardBorderBrush, RoundedCornerShape(8.dp))
             .clickable { onTapCard(snapshot.id) }
     ) {
         // Left 3.5dp solid status stripe

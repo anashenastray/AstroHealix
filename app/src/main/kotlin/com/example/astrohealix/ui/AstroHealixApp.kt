@@ -34,6 +34,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -50,11 +52,14 @@ import com.example.astrohealix.ui.screens.DashboardScreen
 import com.example.astrohealix.ui.screens.LogsScreen
 import com.example.astrohealix.ui.screens.TrendsScreen
 import com.example.astrohealix.ui.theme.BgApp
+import com.example.astrohealix.ui.theme.BgAppGradientEnd
+import com.example.astrohealix.ui.theme.BgAppGradientStart
 import com.example.astrohealix.ui.theme.BgSurface
 import com.example.astrohealix.ui.theme.BorderActive
 import com.example.astrohealix.ui.theme.BorderSubtle
 import com.example.astrohealix.ui.theme.TextPrimary
 import com.example.astrohealix.ui.theme.TextSecondary
+import com.example.astrohealix.ui.theme.VoidBlack
 
 enum class AppNavDestination(val label: String, val shortCode: String, val icon: ImageVector) {
     DASHBOARD("Dashboard", "DASH", Icons.Default.Dashboard),
@@ -79,15 +84,15 @@ fun AstroHealixApp(
     Row(
         modifier = Modifier
             .fillMaxSize()
-            .background(BgApp)
+            .background(Brush.verticalGradient(listOf(BgAppGradientStart, VoidBlack, BgAppGradientEnd)))
             .safeDrawingPadding()
     ) {
-        // --- AEROSPACE LEFT NAVIGATION RAIL ---
+        // --- AEROSPACE LEFT NAVIGATION RAIL (Void Glass) ---
         Box(
             modifier = Modifier
                 .width(76.dp)
                 .fillMaxHeight()
-                .background(BgSurface)
+                .background(Color(0x3D080E1C))
                 .border(1.dp, BorderSubtle)
         ) {
             Column(
@@ -106,7 +111,7 @@ fun AstroHealixApp(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(BgApp)
+                            .background(Color(0x2600F0FF))
                             .border(1.dp, BorderActive, RoundedCornerShape(8.dp)),
                         contentAlignment = Alignment.Center
                     ) {
@@ -129,7 +134,7 @@ fun AstroHealixApp(
 
                 // Middle Navigation Items
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     AppNavDestination.entries.forEach { destination ->
@@ -140,12 +145,12 @@ fun AstroHealixApp(
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                             modifier = Modifier
                                 .defaultMinSize(minWidth = 56.dp, minHeight = 52.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(if (isSelected) BorderActive.copy(alpha = 0.15f) else BgSurface)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSelected) Color(0x3300F0FF) else Color(0x1F141F36))
                                 .border(
                                     1.dp,
-                                    if (isSelected) BorderActive else androidx.compose.ui.graphics.Color.Transparent,
-                                    RoundedCornerShape(6.dp)
+                                    if (isSelected) BorderActive else Color(0x1A475D85),
+                                    RoundedCornerShape(8.dp)
                                 )
                                 .clickable { currentDestination = destination }
                                 .padding(vertical = 8.dp, horizontal = 6.dp)
@@ -175,9 +180,9 @@ fun AstroHealixApp(
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(BgApp)
-                            .border(1.dp, BorderSubtle, RoundedCornerShape(6.dp))
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0x2600F0FF).copy(alpha = 0.12f))
+                            .border(1.dp, BorderActive.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
                             .clickable { showSimulatorDialog = true },
                         contentAlignment = Alignment.Center
                     ) {

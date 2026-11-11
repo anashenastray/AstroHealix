@@ -35,6 +35,8 @@ import com.example.astrohealix.ui.theme.BgApp
 import com.example.astrohealix.ui.theme.BgSurface
 import com.example.astrohealix.ui.theme.BorderActive
 import com.example.astrohealix.ui.theme.BorderSubtle
+import com.example.astrohealix.ui.theme.GlassCardBorderBrush
+import com.example.astrohealix.ui.theme.GlassCardFillBrush
 import com.example.astrohealix.ui.theme.StatusMonitor
 import com.example.astrohealix.ui.theme.StatusMonitorBg
 import com.example.astrohealix.ui.theme.StatusNormal
@@ -56,9 +58,9 @@ fun MissionHeader(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(6.dp))
-            .background(BgSurface)
-            .border(1.dp, BorderSubtle, RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(8.dp))
+            .background(GlassCardFillBrush)
+            .border(1.dp, GlassCardBorderBrush, RoundedCornerShape(8.dp))
             .padding(horizontal = 14.dp, vertical = 8.dp)
     ) {
         Row(

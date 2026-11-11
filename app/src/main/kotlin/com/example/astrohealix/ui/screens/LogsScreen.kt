@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -54,6 +55,8 @@ import com.example.astrohealix.ui.theme.BgApp
 import com.example.astrohealix.ui.theme.BgSurface
 import com.example.astrohealix.ui.theme.BorderActive
 import com.example.astrohealix.ui.theme.BorderSubtle
+import com.example.astrohealix.ui.theme.GlassCardBorderBrush
+import com.example.astrohealix.ui.theme.GlassCardFillBrush
 import com.example.astrohealix.ui.theme.StatusMonitor
 import com.example.astrohealix.ui.theme.StatusNormal
 import com.example.astrohealix.ui.theme.TextPrimary
@@ -199,9 +202,9 @@ fun LogsScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(BgSurface)
-                        .border(1.dp, BorderSubtle, RoundedCornerShape(6.dp))
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(GlassCardFillBrush)
+                        .border(1.dp, GlassCardBorderBrush, RoundedCornerShape(8.dp))
                         .padding(12.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -272,9 +275,9 @@ fun LogsScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(BgSurface)
-                        .border(1.dp, BorderSubtle, RoundedCornerShape(6.dp))
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(GlassCardFillBrush)
+                        .border(1.dp, GlassCardBorderBrush, RoundedCornerShape(8.dp))
                         .padding(12.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -357,9 +360,9 @@ private fun LogEntryCard(log: ManualLogEntry) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(4.dp))
-            .background(BgSurface)
-            .border(1.dp, BorderSubtle, RoundedCornerShape(4.dp))
+            .clip(RoundedCornerShape(6.dp))
+            .background(GlassCardFillBrush)
+            .border(1.dp, GlassCardBorderBrush, RoundedCornerShape(6.dp))
             .padding(10.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
