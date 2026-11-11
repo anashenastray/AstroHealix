@@ -50,6 +50,7 @@ import com.example.astrohealix.model.VitalId
 import com.example.astrohealix.ui.components.AlertBanner
 import com.example.astrohealix.ui.components.BodyMapHUD
 import com.example.astrohealix.ui.components.HealthCard
+import com.example.astrohealix.ui.components.HeroHealthCard
 import com.example.astrohealix.ui.components.MissionHeader
 import com.example.astrohealix.ui.theme.BgApp
 import com.example.astrohealix.ui.theme.BgSurface
@@ -62,6 +63,7 @@ import com.example.astrohealix.ui.theme.TextPrimary
 import com.example.astrohealix.ui.theme.TextSecondary
 import com.example.astrohealix.ui.theme.TextTertiary
 import androidx.compose.ui.graphics.Color
+import com.example.astrohealix.model.VitalStatus
 
 @Composable
 fun DashboardScreen(
@@ -78,6 +80,39 @@ fun DashboardScreen(
     modifier: Modifier = Modifier
 ) {
     var activeAlertIndex by remember { mutableIntStateOf(0) }
+    var cardCountMode by remember { mutableIntStateOf(3) }
+    var selectedBatchIndex by remember { mutableIntStateOf(0) }
+
+    val batchTitles = listOf(
+        "PRIORITY FOCUS",
+        "CARDIO & O2",
+        "METABOLIC & SLEEP",
+        "HABITAT & WORKLOAD"
+    )
+
+    // Dynamically recomputed displayed cards based on active batch & cardCountMode (2 or 3)
+    val displayedCards = remember(state.vitals, cardCountMode, selectedBatchIndex) {
+        val batchVitals = when (selectedBatchIndex) {
+            0 -> {
+                val urgent = state.vitals.filter { it.status == VitalStatus.CRITICAL || it.status == VitalStatus.MONITOR }
+                val normal = state.vitals.filterNot { it.status == VitalStatus.CRITICAL || it.status == VitalStatus.MONITOR }
+                urgent + normal
+            }
+            1 -> {
+                val cardioIds = listOf(VitalId.HEART_RATE, VitalId.BLOOD_PRESSURE, VitalId.SPO2)
+                state.vitals.filter { it.id in cardioIds }
+            }
+            2 -> {
+                val metaIds = listOf(VitalId.BODY_TEMP, VitalId.BLOOD_GLUCOSE, VitalId.SLEEP_HOURS)
+                state.vitals.filter { it.id in metaIds }
+            }
+            else -> {
+                val workloadIds = listOf(VitalId.HYDRATION_ML, VitalId.BONE_EXERCISE_MIN, VitalId.RADIATION_MSV)
+                state.vitals.filter { it.id in workloadIds }
+            }
+        }
+        batchVitals.take(cardCountMode)
+    }
 
     Column(
         modifier = modifier
@@ -123,46 +158,158 @@ fun DashboardScreen(
                 .weight(1f),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // --- LEFT / CENTER REGION: 3-COLUMN VITAL TELEMETRY GRID (63% width) ---
+            // --- LEFT / CENTER REGION: FOCUSED 2 OR 3 HERO CARDS (63% width) ---
             Column(
                 modifier = Modifier
                     .weight(1.35f)
                     .fillMaxHeight(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Section Title Row
+                // Section Title & Controls Bar
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "VITAL TELEMETRY OVERVIEW",
-                        color = TextSecondary,
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "FOCUSED VITAL TELEMETRY",
+                            color = TextPrimary,
+                            fontSize = 12.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold
+                        )
 
-                    Text(
-                        text = "Auto-Prioritized: Critical & Monitor first",
-                        color = TextSecondary.copy(alpha = 0.6f),
-                        fontSize = 10.sp,
-                        fontFamily = FontFamily.Monospace
-                    )
+                        Text(
+                            text = "• NASA HRP Continuous Telemetry",
+                            color = TextSecondary,
+                            fontSize = 10.sp,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+
+                    // Card Count Selector (3 Cards vs 2 Cards) + Next/Prev
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        // 3 CARDS / 2 CARDS Toggle
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0x22FFFFFF))
+                                .border(1.dp, Color(0x45FFFFFF), RoundedCornerShape(6.dp))
+                        ) {
+                            listOf(3, 2).forEach { count ->
+                                val isSel = cardCountMode == count
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(if (isSel) Color(0x55FFFFFF) else Color.Transparent)
+                                        .clickable { cardCountMode = count }
+                                        .padding(horizontal = 9.dp, vertical = 5.dp)
+                                ) {
+                                    Text(
+                                        text = "$count CARDS",
+                                        fontSize = 9.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                        fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isSel) TextPrimary else TextSecondary
+                                    )
+                                }
+                            }
+                        }
+
+                        // Pagination: < PREV | NEXT >
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color(0x25FFFFFF))
+                                    .border(1.dp, Color(0x50FFFFFF), RoundedCornerShape(6.dp))
+                                    .clickable {
+                                        selectedBatchIndex = if (selectedBatchIndex > 0) selectedBatchIndex - 1 else batchTitles.size - 1
+                                    }
+                                    .padding(horizontal = 8.dp, vertical = 5.dp)
+                            ) {
+                                Text("<", color = TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                            }
+
+                            Text(
+                                text = "${selectedBatchIndex + 1}/${batchTitles.size}",
+                                color = TextSecondary,
+                                fontSize = 10.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color(0x25FFFFFF))
+                                    .border(1.dp, Color(0x50FFFFFF), RoundedCornerShape(6.dp))
+                                    .clickable {
+                                        selectedBatchIndex = if (selectedBatchIndex < batchTitles.size - 1) selectedBatchIndex + 1 else 0
+                                    }
+                                    .padding(horizontal = 8.dp, vertical = 5.dp)
+                            ) {
+                                Text(">", color = TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                            }
+                        }
+                    }
                 }
 
-                // 3-Column Telemetry Grid (Instant visibility of all vitals!)
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.weight(1f)
+                // Batch Category Pills
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    items(state.vitals) { vitalCard ->
-                        HealthCard(
-                            snapshot = vitalCard,
-                            onTapCard = onTapVital
+                    batchTitles.forEachIndexed { idx, title ->
+                        val isSelected = selectedBatchIndex == idx
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSelected) Color(0x45FFFFFF) else Color(0x1CFFFFFF))
+                                .border(1.dp, if (isSelected) Color(0x90FFFFFF) else Color(0x30FFFFFF), RoundedCornerShape(8.dp))
+                                .clickable { selectedBatchIndex = idx }
+                                .padding(vertical = 7.dp, horizontal = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = title,
+                                color = if (isSelected) TextPrimary else TextSecondary,
+                                fontSize = 9.sp,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
+                    }
+                }
+
+                // 2 OR 3 HERO CARDS DISPLAYED SIDE-BY-SIDE
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    displayedCards.forEach { card ->
+                        HeroHealthCard(
+                            snapshot = card,
+                            onTapCard = onTapVital,
+                            onOpenQuickLog = onOpenQuickLog,
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
                         )
                     }
                 }

@@ -141,8 +141,8 @@ fun MissionHeader(
                 // Environment Switcher Chip (Frosted Glass)
                 Row(
                     modifier = Modifier
-                        .background(Color(0x14FFFFFF), RoundedCornerShape(8.dp))
-                        .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(8.dp))
+                        .background(Color(0x22FFFFFF), RoundedCornerShape(8.dp))
+                        .border(1.dp, Color(0x45FFFFFF), RoundedCornerShape(8.dp))
                         .clickable { onCycleEnvironment() }
                         .padding(horizontal = 8.dp, vertical = 5.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -177,8 +177,8 @@ fun MissionHeader(
                 if (isOffline) {
                     Row(
                         modifier = Modifier
-                            .background(Color(0x22FFFFFF), RoundedCornerShape(10.dp))
-                            .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(10.dp))
+                            .background(Color(0x35FFFFFF), RoundedCornerShape(10.dp))
+                            .border(1.dp, Color(0x65FFFFFF), RoundedCornerShape(10.dp))
                             .padding(horizontal = 7.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -202,8 +202,8 @@ fun MissionHeader(
                 } else {
                     Row(
                         modifier = Modifier
-                            .background(Color(0x18FFFFFF), RoundedCornerShape(10.dp))
-                            .border(1.dp, Color(0x2EFFFFFF), RoundedCornerShape(10.dp))
+                            .background(Color(0x28FFFFFF), RoundedCornerShape(10.dp))
+                            .border(1.dp, Color(0x55FFFFFF), RoundedCornerShape(10.dp))
                             .padding(horizontal = 7.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -229,8 +229,8 @@ fun MissionHeader(
                 // Simulator Controls Trigger (Frosted Glass Button)
                 Row(
                     modifier = Modifier
-                        .background(Color(0x18FFFFFF), RoundedCornerShape(8.dp))
-                        .border(1.dp, Color(0x35FFFFFF), RoundedCornerShape(8.dp))
+                        .background(Color(0x28FFFFFF), RoundedCornerShape(8.dp))
+                        .border(1.dp, Color(0x55FFFFFF), RoundedCornerShape(8.dp))
                         .clickable { onOpenSimulator() }
                         .padding(horizontal = 8.dp, vertical = 5.dp),
                     verticalAlignment = Alignment.CenterVertically,

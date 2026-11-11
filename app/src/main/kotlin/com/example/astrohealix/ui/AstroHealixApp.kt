@@ -87,13 +87,13 @@ fun AstroHealixApp(
             .background(Brush.verticalGradient(listOf(BgAppGradientStart, VoidBlack, BgAppGradientEnd)))
             .safeDrawingPadding()
     ) {
-        // --- AEROSPACE LEFT NAVIGATION RAIL (Apple VisionOS Void Glass) ---
+        // --- AEROSPACE LEFT NAVIGATION RAIL (Apple VisionOS Frosted Glass) ---
         Box(
             modifier = Modifier
                 .width(76.dp)
                 .fillMaxHeight()
-                .background(Color(0x10FFFFFF))
-                .border(1.dp, Color(0x18FFFFFF))
+                .background(Color(0x1CFFFFFF))
+                .border(1.dp, Color(0x35FFFFFF))
         ) {
             Column(
                 modifier = Modifier
@@ -111,8 +111,8 @@ fun AstroHealixApp(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0x18FFFFFF))
-                            .border(1.dp, Color(0x35FFFFFF), RoundedCornerShape(8.dp)),
+                            .background(Color(0x28FFFFFF))
+                            .border(1.dp, Color(0x55FFFFFF), RoundedCornerShape(8.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -146,10 +146,10 @@ fun AstroHealixApp(
                             modifier = Modifier
                                 .defaultMinSize(minWidth = 56.dp, minHeight = 52.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(if (isSelected) Color(0x30FFFFFF) else Color.Transparent)
+                                .background(if (isSelected) Color(0x40FFFFFF) else Color.Transparent)
                                 .border(
                                     1.dp,
-                                    if (isSelected) Color(0x60FFFFFF) else Color.Transparent,
+                                    if (isSelected) Color(0x80FFFFFF) else Color.Transparent,
                                     RoundedCornerShape(10.dp)
                                 )
                                 .clickable { currentDestination = destination }
@@ -158,12 +158,12 @@ fun AstroHealixApp(
                             Icon(
                                 imageVector = destination.icon,
                                 contentDescription = destination.label,
-                                tint = if (isSelected) TextPrimary else Color(0x75FFFFFF),
+                                tint = if (isSelected) TextPrimary else TextSecondary,
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
                                 text = destination.shortCode,
-                                color = if (isSelected) TextPrimary else Color(0x75FFFFFF),
+                                color = if (isSelected) TextPrimary else TextSecondary,
                                 fontSize = 9.sp,
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
@@ -181,8 +181,8 @@ fun AstroHealixApp(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0x18FFFFFF))
-                            .border(1.dp, Color(0x35FFFFFF), RoundedCornerShape(8.dp))
+                            .background(Color(0x24FFFFFF))
+                            .border(1.dp, Color(0x50FFFFFF), RoundedCornerShape(8.dp))
                             .clickable { showSimulatorDialog = true },
                         contentAlignment = Alignment.Center
                     ) {
