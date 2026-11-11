@@ -127,16 +127,16 @@ fun LogsScreen(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(if (isSelected) BorderActive.copy(alpha = 0.15f) else BgSurface)
-                                .border(1.dp, if (isSelected) BorderActive else BorderSubtle, RoundedCornerShape(4.dp))
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (isSelected) Color(0x30FFFFFF) else Color(0x0EFFFFFF))
+                                .border(1.dp, if (isSelected) Color(0x60FFFFFF) else Color(0x18FFFFFF), RoundedCornerShape(6.dp))
                                 .clickable { selectedFilterIndex = index }
-                                .padding(vertical = 6.dp),
+                                .padding(vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = title,
-                                color = if (isSelected) BorderActive else TextSecondary,
+                                color = if (isSelected) TextPrimary else TextSecondary,
                                 fontSize = 10.sp,
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
@@ -254,12 +254,12 @@ fun LogsScreen(
                                 onForceSync()
                                 Toast.makeText(context, "Initiating Deep Space Comm Sync...", Toast.LENGTH_SHORT).show()
                             },
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = BgApp,
-                                contentColor = BorderActive
+                                containerColor = Color(0x25FFFFFF),
+                                contentColor = TextPrimary
                             ),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderActive),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x60FFFFFF)),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .defaultMinSize(minHeight = 38.dp)
@@ -310,12 +310,12 @@ fun LogsScreen(
                                 clipboardManager.setText(AnnotatedString(csv))
                                 Toast.makeText(context, "Telemetry Spec CSV Copied to Clipboard!", Toast.LENGTH_SHORT).show()
                             },
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = BgApp,
+                                containerColor = Color(0x14FFFFFF),
                                 contentColor = TextPrimary
                             ),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x30FFFFFF)),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .defaultMinSize(minHeight = 38.dp)
@@ -331,10 +331,10 @@ fun LogsScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(BgApp)
-                        .border(1.dp, BorderSubtle, RoundedCornerShape(4.dp))
-                        .padding(8.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0x0CFFFFFF))
+                        .border(1.dp, Color(0x18FFFFFF), RoundedCornerShape(8.dp))
+                        .padding(10.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.Top,
@@ -426,12 +426,12 @@ private fun SystemEventCard(time: String, title: String, detail: String, isSynce
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(4.dp))
-            .background(BgSurface.copy(alpha = 0.6f))
-            .border(1.dp, BorderSubtle.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
-            .padding(10.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0x10FFFFFF))
+            .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(8.dp))
+            .padding(12.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -439,21 +439,21 @@ private fun SystemEventCard(time: String, title: String, detail: String, isSynce
             ) {
                 Text(
                     text = title,
-                    color = TextSecondary,
-                    fontSize = 10.sp,
+                    color = TextPrimary,
+                    fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = time,
-                    color = TextSecondary.copy(alpha = 0.6f),
+                    color = TextSecondary,
                     fontSize = 9.sp,
                     fontFamily = FontFamily.Monospace
                 )
             }
             Text(
                 text = detail,
-                color = TextSecondary.copy(alpha = 0.8f),
+                color = TextSecondary,
                 fontSize = 10.sp,
                 fontFamily = FontFamily.SansSerif
             )

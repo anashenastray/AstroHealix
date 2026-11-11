@@ -44,20 +44,14 @@ import androidx.compose.ui.unit.sp
 import com.example.astrohealix.model.VitalCardSnapshot
 import com.example.astrohealix.model.VitalId
 import com.example.astrohealix.model.VitalStatus
-import com.example.astrohealix.ui.theme.BgSurface
-import com.example.astrohealix.ui.theme.BorderActive
-import com.example.astrohealix.ui.theme.BorderSubtle
-import com.example.astrohealix.ui.theme.CriticalSurfaceGlow
 import com.example.astrohealix.ui.theme.GlassCardBorderBrush
 import com.example.astrohealix.ui.theme.GlassCardFillBrush
-import com.example.astrohealix.ui.theme.MonitorSurfaceGlow
-import com.example.astrohealix.ui.theme.StatusCritical
-import com.example.astrohealix.ui.theme.StatusMonitor
-import com.example.astrohealix.ui.theme.StatusNormal
-import com.example.astrohealix.ui.theme.StatusUnavailable
+import com.example.astrohealix.ui.theme.GlassElevatedBorderBrush
+import com.example.astrohealix.ui.theme.GlassElevatedFillBrush
 import com.example.astrohealix.ui.theme.TextDisabled
 import com.example.astrohealix.ui.theme.TextPrimary
 import com.example.astrohealix.ui.theme.TextSecondary
+import com.example.astrohealix.ui.theme.TextTertiary
 
 @Composable
 fun HealthCard(
@@ -65,19 +59,6 @@ fun HealthCard(
     onTapCard: (VitalId) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val statusColor = when (snapshot.status) {
-        VitalStatus.NORMAL -> StatusNormal
-        VitalStatus.MONITOR -> StatusMonitor
-        VitalStatus.CRITICAL -> StatusCritical
-        VitalStatus.UNAVAILABLE -> StatusUnavailable
-    }
-
-    val cardBg = when (snapshot.status) {
-        VitalStatus.CRITICAL -> CriticalSurfaceGlow
-        VitalStatus.MONITOR -> MonitorSurfaceGlow
-        else -> BgSurface
-    }
-
     val iconVector: ImageVector = when (snapshot.id) {
         VitalId.HEART_RATE -> Icons.Default.Favorite
         VitalId.BLOOD_PRESSURE -> Icons.Default.Speed
@@ -92,15 +73,16 @@ fun HealthCard(
         VitalId.BONE_EXERCISE_MIN -> Icons.Default.FitnessCenter
     }
 
-    val cardFillBrush: Brush = when (snapshot.status) {
-        VitalStatus.CRITICAL -> Brush.verticalGradient(listOf(CriticalSurfaceGlow, Color(0x221A0A10)))
-        VitalStatus.MONITOR -> Brush.verticalGradient(listOf(MonitorSurfaceGlow, Color(0x221A1408)))
+    // Apple Frosted Glass: Fill & Specular Border
+    val cardFill: Brush = when (snapshot.status) {
+        VitalStatus.CRITICAL -> GlassElevatedFillBrush
+        VitalStatus.MONITOR -> GlassCardFillBrush
         else -> GlassCardFillBrush
     }
 
-    val cardBorderBrush: Brush = when (snapshot.status) {
-        VitalStatus.CRITICAL -> SolidColor(StatusCritical.copy(alpha = 0.6f))
-        VitalStatus.MONITOR -> SolidColor(StatusMonitor.copy(alpha = 0.5f))
+    val cardBorder: Brush = when (snapshot.status) {
+        VitalStatus.CRITICAL -> GlassElevatedBorderBrush
+        VitalStatus.MONITOR -> GlassCardBorderBrush
         else -> GlassCardBorderBrush
     }
 
@@ -108,24 +90,15 @@ fun HealthCard(
         modifier = modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = 112.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(cardFillBrush)
-            .border(1.dp, cardBorderBrush, RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(10.dp))
+            .background(cardFill)
+            .border(1.dp, cardBorder, RoundedCornerShape(10.dp))
             .clickable { onTapCard(snapshot.id) }
     ) {
-        // Left 3.5dp solid status stripe
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .width(3.5.dp)
-                .matchParentSize()
-                .background(statusColor)
-        )
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 12.dp, top = 8.dp, end = 10.dp, bottom = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 9.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             // Header Row: [Icon + Short Title] ... [Status Pill]
@@ -136,13 +109,13 @@ fun HealthCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.weight(1f, fill = false)
                 ) {
                     Icon(
                         imageVector = iconVector,
                         contentDescription = snapshot.title,
-                        tint = if (snapshot.status == VitalStatus.UNAVAILABLE) TextDisabled else BorderActive,
+                        tint = if (snapshot.status == VitalStatus.UNAVAILABLE) TextDisabled else TextPrimary,
                         modifier = Modifier.size(13.dp)
                     )
                     Text(
@@ -166,7 +139,7 @@ fun HealthCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Metric Value Display (with plenty of room so numbers never clip)
+            // Metric Value Display (Pure Stark White, Zero Color Tint)
             if (snapshot.status == VitalStatus.UNAVAILABLE) {
                 Text(
                     text = "DATA UNAVAILABLE",
@@ -201,7 +174,7 @@ fun HealthCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Footer: Baseline Delta + Sync Status / Source
+            // Footer: Baseline Delta + Sync Status
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -209,9 +182,7 @@ fun HealthCard(
             ) {
                 Text(
                     text = snapshot.deltaFromBaseline,
-                    color = if (snapshot.status == VitalStatus.CRITICAL) StatusCritical
-                    else if (snapshot.status == VitalStatus.MONITOR) StatusMonitor
-                    else TextSecondary,
+                    color = TextSecondary,
                     fontSize = 10.sp,
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.Medium,
@@ -227,14 +198,14 @@ fun HealthCard(
                         Icon(
                             imageVector = Icons.Default.CloudUpload,
                             contentDescription = "Pending Sync",
-                            tint = StatusMonitor,
+                            tint = TextSecondary,
                             modifier = Modifier.size(10.dp)
                         )
                     }
 
                     Text(
                         text = if (snapshot.status == VitalStatus.UNAVAILABLE) "[OFFLINE]" else snapshot.lastUpdated,
-                        color = TextSecondary.copy(alpha = 0.6f),
+                        color = TextTertiary,
                         fontSize = 9.sp,
                         fontFamily = FontFamily.Monospace,
                         maxLines = 1,

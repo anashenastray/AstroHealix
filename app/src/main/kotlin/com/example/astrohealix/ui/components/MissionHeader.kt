@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,24 +24,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.astrohealix.model.AstronautProfile
 import com.example.astrohealix.model.MissionEnvironment
-import com.example.astrohealix.ui.theme.BgApp
-import com.example.astrohealix.ui.theme.BgSurface
-import com.example.astrohealix.ui.theme.BorderActive
-import com.example.astrohealix.ui.theme.BorderSubtle
 import com.example.astrohealix.ui.theme.GlassCardBorderBrush
 import com.example.astrohealix.ui.theme.GlassCardFillBrush
-import com.example.astrohealix.ui.theme.StatusMonitor
-import com.example.astrohealix.ui.theme.StatusMonitorBg
-import com.example.astrohealix.ui.theme.StatusNormal
-import com.example.astrohealix.ui.theme.StatusNormalBg
 import com.example.astrohealix.ui.theme.TextPrimary
 import com.example.astrohealix.ui.theme.TextSecondary
+import com.example.astrohealix.ui.theme.TextTertiary
 
 @Composable
 fun MissionHeader(
@@ -58,9 +51,9 @@ fun MissionHeader(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(10.dp))
             .background(GlassCardFillBrush)
-            .border(1.dp, GlassCardBorderBrush, RoundedCornerShape(8.dp))
+            .border(1.dp, GlassCardBorderBrush, RoundedCornerShape(10.dp))
             .padding(horizontal = 14.dp, vertical = 8.dp)
     ) {
         Row(
@@ -68,16 +61,16 @@ fun MissionHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left Group: Brand + Astro Identification + Vital Cabin Telemetry
+            // Left Group: Brand + Astro Identification + Vital Cabin Telemetry (Monochrome Starkness)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.weight(1f, fill = false)
             ) {
-                // NASA VITA-SYS badge
+                // VITA-SYS Monochrome Badge
                 Text(
-                    text = "[NASA VITA-SYS]",
-                    color = BorderActive,
+                    text = "VITA-SYS",
+                    color = TextPrimary,
                     fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
@@ -87,7 +80,7 @@ fun MissionHeader(
                 Box(
                     modifier = Modifier
                         .size(3.dp)
-                        .background(TextSecondary.copy(alpha = 0.5f), RoundedCornerShape(1.dp))
+                        .background(TextTertiary, RoundedCornerShape(1.dp))
                 )
 
                 Text(
@@ -107,7 +100,7 @@ fun MissionHeader(
                     maxLines = 1
                 )
 
-                // Battery
+                // Battery Indicator (Frosted White)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(3.dp)
@@ -115,7 +108,7 @@ fun MissionHeader(
                     Icon(
                         imageVector = Icons.Default.BatteryChargingFull,
                         contentDescription = "Battery",
-                        tint = StatusNormal,
+                        tint = TextPrimary,
                         modifier = Modifier.size(12.dp)
                     )
                     Text(
@@ -140,16 +133,16 @@ fun MissionHeader(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Right Group: Environment + Sync Pill + Simulator Button
+            // Right Group: Environment + Sync Pill + Simulator Button (Frosted Monochrome Glass)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Environment Switcher Chip
+                // Environment Switcher Chip (Frosted Glass)
                 Row(
                     modifier = Modifier
-                        .background(BgApp, RoundedCornerShape(4.dp))
-                        .border(1.dp, BorderSubtle, RoundedCornerShape(4.dp))
+                        .background(Color(0x14FFFFFF), RoundedCornerShape(8.dp))
+                        .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(8.dp))
                         .clickable { onCycleEnvironment() }
                         .padding(horizontal = 8.dp, vertical = 5.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -158,7 +151,7 @@ fun MissionHeader(
                     Icon(
                         imageVector = Icons.Default.Public,
                         contentDescription = "Environment",
-                        tint = BorderActive,
+                        tint = TextPrimary,
                         modifier = Modifier.size(12.dp)
                     )
                     Text(
@@ -180,12 +173,12 @@ fun MissionHeader(
                     )
                 }
 
-                // Sync Status Pill
+                // Sync Status Pill (Frosted Glass)
                 if (isOffline) {
                     Row(
                         modifier = Modifier
-                            .background(StatusMonitorBg, RoundedCornerShape(10.dp))
-                            .border(1.dp, StatusMonitor.copy(alpha = 0.8f), RoundedCornerShape(10.dp))
+                            .background(Color(0x22FFFFFF), RoundedCornerShape(10.dp))
+                            .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(10.dp))
                             .padding(horizontal = 7.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -193,12 +186,12 @@ fun MissionHeader(
                         Icon(
                             imageVector = Icons.Default.CloudOff,
                             contentDescription = "Offline Cache",
-                            tint = StatusMonitor,
+                            tint = TextPrimary,
                             modifier = Modifier.size(11.dp)
                         )
                         Text(
                             text = if (pendingSyncCount > 0) "OFFLINE ($pendingSyncCount)" else "OFFLINE",
-                            color = StatusMonitor,
+                            color = TextPrimary,
                             fontSize = 10.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
@@ -209,8 +202,8 @@ fun MissionHeader(
                 } else {
                     Row(
                         modifier = Modifier
-                            .background(StatusNormalBg, RoundedCornerShape(10.dp))
-                            .border(1.dp, StatusNormal.copy(alpha = 0.8f), RoundedCornerShape(10.dp))
+                            .background(Color(0x18FFFFFF), RoundedCornerShape(10.dp))
+                            .border(1.dp, Color(0x2EFFFFFF), RoundedCornerShape(10.dp))
                             .padding(horizontal = 7.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -218,12 +211,12 @@ fun MissionHeader(
                         Icon(
                             imageVector = Icons.Default.CloudDone,
                             contentDescription = "Synced",
-                            tint = StatusNormal,
+                            tint = TextPrimary,
                             modifier = Modifier.size(11.dp)
                         )
                         Text(
                             text = "COMM LINK SYNCED",
-                            color = StatusNormal,
+                            color = TextPrimary,
                             fontSize = 10.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
@@ -233,11 +226,11 @@ fun MissionHeader(
                     }
                 }
 
-                // Simulator Controls Trigger
+                // Simulator Controls Trigger (Frosted Glass Button)
                 Row(
                     modifier = Modifier
-                        .background(BgApp, RoundedCornerShape(4.dp))
-                        .border(1.dp, BorderActive.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
+                        .background(Color(0x18FFFFFF), RoundedCornerShape(8.dp))
+                        .border(1.dp, Color(0x35FFFFFF), RoundedCornerShape(8.dp))
                         .clickable { onOpenSimulator() }
                         .padding(horizontal = 8.dp, vertical = 5.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -246,12 +239,12 @@ fun MissionHeader(
                     Icon(
                         imageVector = Icons.Default.Tune,
                         contentDescription = "Sim Controls",
-                        tint = BorderActive,
+                        tint = TextPrimary,
                         modifier = Modifier.size(12.dp)
                     )
                     Text(
                         text = "SIM CONTROLS",
-                        color = BorderActive,
+                        color = TextPrimary,
                         fontSize = 10.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,

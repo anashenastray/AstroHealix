@@ -17,20 +17,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.astrohealix.model.VitalStatus
-import com.example.astrohealix.ui.theme.StatusCritical
-import com.example.astrohealix.ui.theme.StatusCriticalBg
-import com.example.astrohealix.ui.theme.StatusMonitor
-import com.example.astrohealix.ui.theme.StatusMonitorBg
-import com.example.astrohealix.ui.theme.StatusNormal
-import com.example.astrohealix.ui.theme.StatusNormalBg
-import com.example.astrohealix.ui.theme.StatusUnavailable
-import com.example.astrohealix.ui.theme.StatusUnavailableBg
+import com.example.astrohealix.ui.theme.TextPrimary
+import com.example.astrohealix.ui.theme.TextSecondary
+import com.example.astrohealix.ui.theme.TextTertiary
 
 @Composable
 fun StatusPill(
@@ -48,40 +44,47 @@ fun StatusPill(
 
     val compactLabel = when (status) {
         VitalStatus.NORMAL -> "NORM"
-        VitalStatus.MONITOR -> "WARN"
+        VitalStatus.MONITOR -> "MONITOR"
         VitalStatus.CRITICAL -> "CRIT"
         VitalStatus.UNAVAILABLE -> "N/A"
     }
 
-    val fgColor = when (status) {
-        VitalStatus.NORMAL -> StatusNormal
-        VitalStatus.MONITOR -> StatusMonitor
-        VitalStatus.CRITICAL -> StatusCritical
-        VitalStatus.UNAVAILABLE -> StatusUnavailable
-    }
-
-    val bgColor = when (status) {
-        VitalStatus.NORMAL -> StatusNormalBg
-        VitalStatus.MONITOR -> StatusMonitorBg
-        VitalStatus.CRITICAL -> StatusCriticalBg
-        VitalStatus.UNAVAILABLE -> StatusUnavailableBg
-    }
-
-    val icon: ImageVector = when (status) {
-        VitalStatus.NORMAL -> Icons.Default.CheckCircle
-        VitalStatus.MONITOR -> Icons.Default.WarningAmber
-        VitalStatus.CRITICAL -> Icons.Default.Warning
-        VitalStatus.UNAVAILABLE -> Icons.Default.Close
+    // Apple Frosted Glass Monochrome Styling (Zero neon color noise)
+    val (fgColor, bgColor, borderColor, icon: ImageVector) = when (status) {
+        VitalStatus.NORMAL -> Quad(
+            TextPrimary,
+            Color(0x14FFFFFF),
+            Color(0x28FFFFFF),
+            Icons.Default.CheckCircle
+        )
+        VitalStatus.MONITOR -> Quad(
+            TextPrimary,
+            Color(0x22FFFFFF),
+            Color(0x40FFFFFF),
+            Icons.Default.WarningAmber
+        )
+        VitalStatus.CRITICAL -> Quad(
+            TextPrimary,
+            Color(0x35FFFFFF),
+            Color(0x70FFFFFF),
+            Icons.Default.Warning
+        )
+        VitalStatus.UNAVAILABLE -> Quad(
+            TextTertiary,
+            Color(0x0CFFFFFF),
+            Color(0x18FFFFFF),
+            Icons.Default.Close
+        )
     }
 
     val displayLabel = customLabel ?: if (compact) compactLabel else fullLabel
 
     Row(
         modifier = modifier
-            .background(bgColor, RoundedCornerShape(10.dp))
-            .border(1.dp, fgColor.copy(alpha = 0.75f), RoundedCornerShape(10.dp))
+            .background(bgColor, RoundedCornerShape(12.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(12.dp))
             .padding(
-                horizontal = if (compact) 5.dp else 8.dp,
+                horizontal = if (compact) 6.dp else 8.dp,
                 vertical = if (compact) 2.dp else 3.dp
             ),
         verticalAlignment = Alignment.CenterVertically,
@@ -105,3 +108,5 @@ fun StatusPill(
         )
     }
 }
+
+private data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)

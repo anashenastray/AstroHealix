@@ -84,7 +84,7 @@ fun BodyMapHUD(
                 ) {
                     Text(
                         text = "ASTRONAUT PHYSIOLOGICAL MAP",
-                        color = BorderActive,
+                        color = TextPrimary,
                         fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold
@@ -188,21 +188,21 @@ fun BodyMapHUD(
                     close()
                 }
 
-                // Draw Spacesuit Outline
+                // Draw Spacesuit Outline (Apple Frosted Glass Specular Line)
                 drawPath(
                     path = suitPath,
-                    color = BorderSubtle.copy(alpha = 0.85f),
+                    color = Color(0x35FFFFFF),
                     style = Stroke(width = 1.6f.dp.toPx())
                 )
 
-                // Helmet Visor (OLED Cyan Glow)
+                // Helmet Visor (Apple Frosted Glass)
                 drawOval(
-                    color = BorderActive.copy(alpha = 0.25f),
+                    color = Color(0x22FFFFFF),
                     topLeft = Offset(cx - figW * 0.14f, cy - figH * 0.44f),
                     size = Size(figW * 0.28f, figH * 0.10f)
                 )
                 drawOval(
-                    color = BorderActive,
+                    color = Color(0x60FFFFFF),
                     topLeft = Offset(cx - figW * 0.14f, cy - figH * 0.44f),
                     size = Size(figW * 0.28f, figH * 0.10f),
                     style = Stroke(width = 1.2f.dp.toPx())
@@ -210,13 +210,13 @@ fun BodyMapHUD(
 
                 // Chest Display Unit outline
                 drawRect(
-                    color = BorderSubtle,
+                    color = Color(0x28FFFFFF),
                     topLeft = Offset(cx - figW * 0.16f, cy - figH * 0.24f),
                     size = Size(figW * 0.32f, figH * 0.12f),
                     style = Stroke(width = 1f.dp.toPx())
                 )
 
-                // Anatomical Nodes
+                // Anatomical Nodes (Monochrome Glass Glow)
                 val nodes = listOf(
                     Triple(BodyZoneId.HEAD_NEURO, Offset(cx, cy - figH * 0.38f), if (isMini) 12f else 17f),
                     Triple(BodyZoneId.RESPIRATORY, Offset(cx - figW * 0.24f, cy - figH * 0.18f), if (isMini) 11f else 15f),
@@ -228,26 +228,19 @@ fun BodyMapHUD(
 
                 for ((zoneId, pos, radiusDp) in nodes) {
                     val isSelected = zoneId == selectedZone
-                    val status = zoneStatuses[zoneId] ?: VitalStatus.NORMAL
-                    val statusColor = when (status) {
-                        VitalStatus.NORMAL -> StatusNormal
-                        VitalStatus.MONITOR -> StatusMonitor
-                        VitalStatus.CRITICAL -> StatusCritical
-                        VitalStatus.UNAVAILABLE -> StatusUnavailable
-                    }
 
                     // Outer halo when selected
                     if (isSelected) {
                         drawCircle(
-                            color = BorderActive.copy(alpha = 0.35f),
+                            color = Color(0x35FFFFFF),
                             radius = (radiusDp + 7f).dp.toPx(),
                             center = pos
                         )
                     }
 
-                    // Status Ring
+                    // Status Ring (Frosted Specular Glass Ring)
                     drawCircle(
-                        color = statusColor,
+                        color = if (isSelected) Color(0xFFFFFFFF) else Color(0x60FFFFFF),
                         radius = radiusDp.dp.toPx(),
                         center = pos,
                         style = Stroke(width = if (isSelected) 2.2f.dp.toPx() else 1.5f.dp.toPx())
@@ -255,7 +248,7 @@ fun BodyMapHUD(
 
                     // Core point
                     drawCircle(
-                        color = if (isSelected) BorderActive else statusColor.copy(alpha = 0.5f),
+                        color = if (isSelected) Color(0xFFFFFFFF) else Color(0x30FFFFFF),
                         radius = (radiusDp * 0.42f).dp.toPx(),
                         center = pos
                     )

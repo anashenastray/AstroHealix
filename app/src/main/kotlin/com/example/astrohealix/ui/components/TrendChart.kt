@@ -93,7 +93,7 @@ fun TrendChart(
                 val vStr = pt.value?.let { if (vital.precision > 0) "%.${vital.precision}f".format(it) else it.toInt().toString() } ?: "N/A"
                 Text(
                     text = "${pt.timeLabel}: $vStr ${vital.unit} [${pt.source.name}]",
-                    color = BorderActive,
+                    color = TextPrimary,
                     fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold
@@ -129,22 +129,22 @@ fun TrendChart(
                     return height - (normalized * height).coerceIn(0f, height)
                 }
 
-                // 1. Shaded Personal Baseline Nominal Zone
+                // 1. Shaded Personal Baseline Nominal Zone (Apple Frosted Glass Envelope)
                 val baselineTopY = getY(baseline.nominalMax)
                 val baselineBottomY = getY(baseline.nominalMin)
                 drawRect(
-                    color = StatusNormal.copy(alpha = 0.10f),
+                    color = Color(0x0EFFFFFF),
                     topLeft = Offset(0f, baselineTopY),
                     size = Size(width, (baselineBottomY - baselineTopY).coerceAtLeast(2f))
                 )
 
-                // 2. Dotted horizontal gridlines for Critical High, Nominal Max, Nominal Min, Critical Low
+                // 2. Dotted horizontal gridlines
                 val dottedEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f), 0f)
 
                 baseline.criticalHigh?.let { cHigh ->
                     val cy = getY(cHigh)
                     drawLine(
-                        color = StatusCritical.copy(alpha = 0.5f),
+                        color = Color(0x35FFFFFF),
                         start = Offset(0f, cy),
                         end = Offset(width, cy),
                         strokeWidth = 1f,
@@ -153,7 +153,7 @@ fun TrendChart(
                 }
 
                 drawLine(
-                    color = BorderSubtle,
+                    color = Color(0x18FFFFFF),
                     start = Offset(0f, baselineTopY),
                     end = Offset(width, baselineTopY),
                     strokeWidth = 1f,
@@ -161,7 +161,7 @@ fun TrendChart(
                 )
 
                 drawLine(
-                    color = BorderSubtle,
+                    color = Color(0x18FFFFFF),
                     start = Offset(0f, baselineBottomY),
                     end = Offset(width, baselineBottomY),
                     strokeWidth = 1f,
@@ -171,7 +171,7 @@ fun TrendChart(
                 baseline.criticalLow?.let { cLow ->
                     val cy = getY(cLow)
                     drawLine(
-                        color = StatusCritical.copy(alpha = 0.5f),
+                        color = Color(0x35FFFFFF),
                         start = Offset(0f, cy),
                         end = Offset(width, cy),
                         strokeWidth = 1f,
@@ -193,7 +193,7 @@ fun TrendChart(
                         val gx1 = gapStartIndex * stepX
                         val gx2 = i * stepX
                         drawRect(
-                            color = StatusUnavailable.copy(alpha = 0.25f),
+                            color = Color(0x15FFFFFF),
                             topLeft = Offset(gx1, 0f),
                             size = Size(gx2 - gx1, height)
                         )
@@ -203,13 +203,13 @@ fun TrendChart(
                 if (gapStartIndex != null) {
                     val gx1 = gapStartIndex * stepX
                     drawRect(
-                        color = StatusUnavailable.copy(alpha = 0.25f),
+                        color = Color(0x15FFFFFF),
                         topLeft = Offset(gx1, 0f),
                         size = Size(width - gx1, height)
                     )
                 }
 
-                // 4. Plot Telemetry Segments (Solid Cyan for Live/Synced, Dashed for Estimated, Breaking on Gap)
+                // 4. Plot Telemetry Segments (Apple Stark White Specular Line)
                 var currentPath = Path()
                 var pathHasPoints = false
                 var isSegmentEstimated = false
@@ -222,9 +222,9 @@ fun TrendChart(
                         if (pathHasPoints) {
                             drawPath(
                                 path = currentPath,
-                                color = BorderActive,
+                                color = TextPrimary,
                                 style = Stroke(
-                                    width = 2.5f.dp.toPx(),
+                                    width = 2.2f.dp.toPx(),
                                     pathEffect = if (isSegmentEstimated) dottedEffect else null
                                 )
                             )
@@ -242,9 +242,17 @@ fun TrendChart(
                         }
 
                         // Point circle
-                        val ptColor = if (pt.anomalyRule != null) StatusCritical
-                        else if (pt.isEstimated) StatusMonitor
-                        else BorderActive
+                        val ptColor = if (pt.anomalyRule != null) Color(0xFFFFFFFF)
+                        else if (pt.isEstimated) Color(0x70FFFFFF)
+                        else TextPrimary
+
+                        if (pt.anomalyRule != null) {
+                            drawCircle(
+                                color = Color(0x40FFFFFF),
+                                radius = 7.dp.toPx(),
+                                center = Offset(px, py)
+                            )
+                        }
 
                         drawCircle(
                             color = ptColor,
@@ -257,9 +265,9 @@ fun TrendChart(
                 if (pathHasPoints) {
                     drawPath(
                         path = currentPath,
-                        color = BorderActive,
+                        color = TextPrimary,
                         style = Stroke(
-                            width = 2.5f.dp.toPx(),
+                            width = 2.2f.dp.toPx(),
                             pathEffect = if (isSegmentEstimated) dottedEffect else null
                         )
                     )
@@ -274,10 +282,10 @@ fun TrendChart(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                LegendItem(color = BorderActive, label = "Nominal Telemetry")
-                LegendItem(color = StatusNormal.copy(alpha = 0.5f), label = "Personal Baseline")
-                LegendItem(color = StatusUnavailable, label = "[GAP / NO DATA]")
-                LegendItem(color = StatusCritical, label = "Anomaly Spike")
+                LegendItem(color = TextPrimary, label = "Nominal Telemetry")
+                LegendItem(color = Color(0x35FFFFFF), label = "Personal Baseline")
+                LegendItem(color = Color(0x15FFFFFF), label = "[GAP / NO DATA]")
+                LegendItem(color = TextPrimary, label = "Anomaly Spike")
             }
 
             Text(

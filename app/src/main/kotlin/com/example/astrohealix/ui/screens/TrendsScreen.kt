@@ -97,7 +97,7 @@ fun TrendsScreen(
             ) {
                 Text(
                     text = "${vitalDef.title.uppercase()} TELEMETRY DETAILED ANALYTICS",
-                    color = BorderActive,
+                    color = TextPrimary,
                     fontSize = 12.sp,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold
@@ -111,25 +111,25 @@ fun TrendsScreen(
                 )
             }
 
-            // Timeframe selector
+            // Timeframe selector (Apple Frosted Glass)
             Row(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(BgSurface)
-                    .border(1.dp, BorderSubtle, RoundedCornerShape(4.dp))
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0x10FFFFFF))
+                    .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(8.dp))
             ) {
                 timeframes.forEachIndexed { index, title ->
                     val isSelected = selectedTimeframeIndex == index
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(if (isSelected) BorderActive.copy(alpha = 0.15f) else BgSurface)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isSelected) Color(0x35FFFFFF) else Color.Transparent)
                             .clickable { selectedTimeframeIndex = index }
                             .padding(horizontal = 10.dp, vertical = 5.dp)
                     ) {
                         Text(
                             text = title,
-                            color = if (isSelected) BorderActive else TextSecondary,
+                            color = if (isSelected) TextPrimary else TextSecondary,
                             fontSize = 10.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
@@ -163,16 +163,16 @@ fun TrendsScreen(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(if (isSelected) BorderActive.copy(alpha = 0.15f) else BgSurface)
-                            .border(1.dp, if (isSelected) BorderActive else BorderSubtle, RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isSelected) Color(0x30FFFFFF) else Color(0x0EFFFFFF))
+                            .border(1.dp, if (isSelected) Color(0x60FFFFFF) else Color(0x18FFFFFF), RoundedCornerShape(8.dp))
                             .clickable { selectedVitalId = vId }
                             .padding(vertical = 5.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = vId.shortLabel,
-                            color = if (isSelected) BorderActive else TextSecondary,
+                            color = if (isSelected) TextPrimary else TextSecondary,
                             fontSize = 10.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
@@ -192,16 +192,16 @@ fun TrendsScreen(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(if (isSelected) BorderActive.copy(alpha = 0.15f) else BgSurface)
-                            .border(1.dp, if (isSelected) BorderActive else BorderSubtle, RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isSelected) Color(0x30FFFFFF) else Color(0x0EFFFFFF))
+                            .border(1.dp, if (isSelected) Color(0x60FFFFFF) else Color(0x18FFFFFF), RoundedCornerShape(8.dp))
                             .clickable { selectedVitalId = vId }
                             .padding(vertical = 5.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = vId.shortLabel,
-                            color = if (isSelected) BorderActive else TextSecondary,
+                            color = if (isSelected) TextPrimary else TextSecondary,
                             fontSize = 10.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
@@ -256,7 +256,7 @@ fun TrendsScreen(
                     ) {
                         Text(
                             text = "24-HOUR STATISTICAL TELEMETRY DISTRIBUTION",
-                            color = BorderActive,
+                            color = TextPrimary,
                             fontSize = 11.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold
@@ -266,8 +266,8 @@ fun TrendsScreen(
                             StatRow("Rolling 24h Average:", "${avg?.let { "%.1f".format(it) } ?: "73.0"} ${vitalDef.unit}")
                             StatRow("Astronaut Baseline Band:", "${vitalDef.baseline.nominalMin.toInt()} – ${vitalDef.baseline.nominalMax.toInt()} ${vitalDef.unit}")
                             StatRow("Min / Max Range Recorded:", "${minVal?.toInt() ?: 58} / ${maxVal?.toInt() ?: 94} ${vitalDef.unit} (Peak: ${maxPoint?.timeLabel ?: "07:14 UTC"})")
-                            StatRow("Time in Nominal Baseline:", "$inRangePct% of recording window", if (inRangePct >= 85) StatusNormal else StatusMonitor)
-                            StatRow("Sensor Packet Integrity:", "$sensorIntegrity% Valid Packets", if (sensorIntegrity >= 90) StatusNormal else StatusMonitor)
+                            StatRow("Time in Nominal Baseline:", "$inRangePct% of recording window", TextPrimary)
+                            StatRow("Sensor Packet Integrity:", "$sensorIntegrity% Valid Packets", TextPrimary)
                         }
 
                         Text(
@@ -300,21 +300,21 @@ fun TrendsScreen(
                         ) {
                             Text(
                                 text = "ANOMALY EVALUATOR & CLINICAL DECISION RULE",
-                                color = StatusMonitor,
+                                color = TextPrimary,
                                 fontSize = 11.sp,
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = FontWeight.Bold
                             )
-                            Icon(Icons.Default.Warning, contentDescription = null, tint = StatusMonitor, modifier = Modifier.size(14.dp))
+                            Icon(Icons.Default.Warning, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(14.dp))
                         }
 
-                        // Anomaly event callout box
+                        // Anomaly event callout box (Apple Frosted Glass)
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(BgApp)
-                                .border(1.dp, StatusMonitor.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0x14FFFFFF))
+                                .border(1.dp, Color(0x30FFFFFF), RoundedCornerShape(8.dp))
                                 .padding(8.dp)
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -327,7 +327,7 @@ fun TrendsScreen(
                                 )
                                 Text(
                                     text = "Algorithm: Baseline Delta Rule 5.2 triggered (+16 bpm spike over upper baseline).",
-                                    color = StatusMonitor,
+                                    color = TextSecondary,
                                     fontSize = 10.sp,
                                     fontFamily = FontFamily.Monospace
                                 )
@@ -345,7 +345,7 @@ fun TrendsScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Icon(Icons.Default.Info, contentDescription = null, tint = BorderActive, modifier = Modifier.size(13.dp))
+                            Icon(Icons.Default.Info, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(13.dp))
                             Text(
                                 text = "NASA HRP Standard: Auto-escalates when 3 consecutive cycles drift outside tolerance.",
                                 color = TextSecondary,

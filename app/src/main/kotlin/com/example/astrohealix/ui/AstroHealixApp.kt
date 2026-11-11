@@ -87,13 +87,13 @@ fun AstroHealixApp(
             .background(Brush.verticalGradient(listOf(BgAppGradientStart, VoidBlack, BgAppGradientEnd)))
             .safeDrawingPadding()
     ) {
-        // --- AEROSPACE LEFT NAVIGATION RAIL (Void Glass) ---
+        // --- AEROSPACE LEFT NAVIGATION RAIL (Apple VisionOS Void Glass) ---
         Box(
             modifier = Modifier
                 .width(76.dp)
                 .fillMaxHeight()
-                .background(Color(0x3D080E1C))
-                .border(1.dp, BorderSubtle)
+                .background(Color(0x10FFFFFF))
+                .border(1.dp, Color(0x18FFFFFF))
         ) {
             Column(
                 modifier = Modifier
@@ -111,13 +111,13 @@ fun AstroHealixApp(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0x2600F0FF))
-                            .border(1.dp, BorderActive, RoundedCornerShape(8.dp)),
+                            .background(Color(0x18FFFFFF))
+                            .border(1.dp, Color(0x35FFFFFF), RoundedCornerShape(8.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "AGY",
-                            color = BorderActive,
+                            color = TextPrimary,
                             fontSize = 12.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold
@@ -132,7 +132,7 @@ fun AstroHealixApp(
                     )
                 }
 
-                // Middle Navigation Items
+                // Middle Navigation Items (Apple Frosted Glass Pills)
                 Column(
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -145,12 +145,12 @@ fun AstroHealixApp(
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                             modifier = Modifier
                                 .defaultMinSize(minWidth = 56.dp, minHeight = 52.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) Color(0x3300F0FF) else Color(0x1F141F36))
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isSelected) Color(0x30FFFFFF) else Color.Transparent)
                                 .border(
                                     1.dp,
-                                    if (isSelected) BorderActive else Color(0x1A475D85),
-                                    RoundedCornerShape(8.dp)
+                                    if (isSelected) Color(0x60FFFFFF) else Color.Transparent,
+                                    RoundedCornerShape(10.dp)
                                 )
                                 .clickable { currentDestination = destination }
                                 .padding(vertical = 8.dp, horizontal = 6.dp)
@@ -158,12 +158,12 @@ fun AstroHealixApp(
                             Icon(
                                 imageVector = destination.icon,
                                 contentDescription = destination.label,
-                                tint = if (isSelected) BorderActive else TextSecondary,
+                                tint = if (isSelected) TextPrimary else Color(0x75FFFFFF),
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
                                 text = destination.shortCode,
-                                color = if (isSelected) BorderActive else TextSecondary,
+                                color = if (isSelected) TextPrimary else Color(0x75FFFFFF),
                                 fontSize = 9.sp,
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
@@ -172,7 +172,7 @@ fun AstroHealixApp(
                     }
                 }
 
-                // Bottom Controls Trigger
+                // Bottom Controls Trigger (Apple Frosted Glass)
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -181,15 +181,15 @@ fun AstroHealixApp(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0x2600F0FF).copy(alpha = 0.12f))
-                            .border(1.dp, BorderActive.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                            .background(Color(0x18FFFFFF))
+                            .border(1.dp, Color(0x35FFFFFF), RoundedCornerShape(8.dp))
                             .clickable { showSimulatorDialog = true },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Tune,
                             contentDescription = "Sim Controls",
-                            tint = BorderActive,
+                            tint = TextPrimary,
                             modifier = Modifier.size(16.dp)
                         )
                     }

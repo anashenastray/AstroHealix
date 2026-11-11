@@ -84,7 +84,7 @@ fun BodyMapScreen(
         ) {
             Text(
                 text = "ASTRONAUT ANATOMICAL HUD & 5 NASA HRP HAZARDS",
-                color = BorderActive,
+                color = TextPrimary,
                 fontSize = 12.sp,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold
@@ -141,16 +141,16 @@ fun BodyMapScreen(
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(if (isSelected) Color(0x3300F0FF) else Color(0x1F141F36))
-                                    .border(1.dp, if (isSelected) BorderActive else Color(0x1A475D85), RoundedCornerShape(6.dp))
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSelected) Color(0x30FFFFFF) else Color(0x0EFFFFFF))
+                                    .border(1.dp, if (isSelected) Color(0x70FFFFFF) else Color(0x18FFFFFF), RoundedCornerShape(8.dp))
                                     .clickable { selectedZone = zone }
                                     .padding(vertical = 7.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = label,
-                                    color = if (isSelected) BorderActive else TextSecondary,
+                                    color = if (isSelected) TextPrimary else TextSecondary,
                                     fontSize = 10.sp,
                                     fontFamily = FontFamily.Monospace,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
@@ -170,16 +170,16 @@ fun BodyMapScreen(
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(if (isSelected) Color(0x3300F0FF) else Color(0x1F141F36))
-                                    .border(1.dp, if (isSelected) BorderActive else Color(0x1A475D85), RoundedCornerShape(6.dp))
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSelected) Color(0x30FFFFFF) else Color(0x0EFFFFFF))
+                                    .border(1.dp, if (isSelected) Color(0x70FFFFFF) else Color(0x18FFFFFF), RoundedCornerShape(8.dp))
                                     .clickable { selectedZone = zone }
                                     .padding(vertical = 7.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = label,
-                                    color = if (isSelected) BorderActive else TextSecondary,
+                                    color = if (isSelected) TextPrimary else TextSecondary,
                                     fontSize = 10.sp,
                                     fontFamily = FontFamily.Monospace,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
@@ -249,7 +249,7 @@ private fun ZoneDetailCard(
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     text = zone.title.uppercase(),
-                    color = BorderActive,
+                    color = TextPrimary,
                     fontSize = 14.sp,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold
@@ -262,13 +262,13 @@ private fun ZoneDetailCard(
                 )
             }
 
-            // Recommended Space Medical Exam
+            // Recommended Space Medical Exam (Frosted Glass Well)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(BgApp)
-                    .border(1.dp, BorderSubtle, RoundedCornerShape(4.dp))
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0x12FFFFFF))
+                    .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(8.dp))
                     .padding(8.dp)
             ) {
                 Row(
@@ -278,7 +278,7 @@ private fun ZoneDetailCard(
                     Icon(
                         imageVector = Icons.Default.Security,
                         contentDescription = "Exam",
-                        tint = BorderActive,
+                        tint = TextPrimary,
                         modifier = Modifier.size(14.dp)
                     )
                     Column {
@@ -362,12 +362,12 @@ private fun ZoneDetailCard(
             ) {
                 OutlinedButton(
                     onClick = { onOpenGuide(firstVital) },
-                    shape = RoundedCornerShape(4.dp),
+                    shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = BgApp,
-                        contentColor = BorderActive
+                        containerColor = Color(0x18FFFFFF),
+                        contentColor = TextPrimary
                     ),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderActive),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x40FFFFFF)),
                     modifier = Modifier.weight(1f).defaultMinSize(minHeight = 38.dp)
                 ) {
                     Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(13.dp))
@@ -377,12 +377,12 @@ private fun ZoneDetailCard(
 
                 OutlinedButton(
                     onClick = { onLogMetric(firstVital) },
-                    shape = RoundedCornerShape(4.dp),
+                    shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = BgApp,
+                        containerColor = Color(0x10FFFFFF),
                         contentColor = TextPrimary
                     ),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x24FFFFFF)),
                     modifier = Modifier.weight(1f).defaultMinSize(minHeight = 38.dp)
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(13.dp))
@@ -431,7 +431,7 @@ private fun HazardCard(hazard: HazardScore) {
                 ) {
                     Text(
                         text = "RISK: ${hazard.score}/100",
-                        color = statusColor,
+                        color = TextSecondary,
                         fontSize = 10.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold

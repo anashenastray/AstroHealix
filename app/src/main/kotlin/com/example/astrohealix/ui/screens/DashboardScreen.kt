@@ -60,6 +60,8 @@ import com.example.astrohealix.ui.theme.GlassCardFillBrush
 import com.example.astrohealix.ui.theme.StatusNormal
 import com.example.astrohealix.ui.theme.TextPrimary
 import com.example.astrohealix.ui.theme.TextSecondary
+import com.example.astrohealix.ui.theme.TextTertiary
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun DashboardScreen(
@@ -200,7 +202,7 @@ fun DashboardScreen(
                         ) {
                             Text(
                                 text = "ANATOMICAL SYSTEMS HUD",
-                                color = BorderActive,
+                                color = TextPrimary,
                                 fontSize = 11.sp,
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = FontWeight.Bold
@@ -231,12 +233,12 @@ fun DashboardScreen(
                     ) {
                         OutlinedButton(
                             onClick = { onOpenQuickLog(VitalId.HYDRATION_ML) },
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = BgSurface,
-                                contentColor = BorderActive
+                                containerColor = Color(0x18FFFFFF),
+                                contentColor = TextPrimary
                             ),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderActive),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x35FFFFFF)),
                             modifier = Modifier
                                 .weight(1f)
                                 .defaultMinSize(minHeight = 40.dp)
@@ -248,17 +250,17 @@ fun DashboardScreen(
 
                         OutlinedButton(
                             onClick = { onOpenQuickLog(VitalId.MOOD_INDEX) },
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = BgSurface,
+                                containerColor = Color(0x18FFFFFF),
                                 contentColor = TextPrimary
                             ),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x35FFFFFF)),
                             modifier = Modifier
                                 .weight(1f)
                                 .defaultMinSize(minHeight = 40.dp)
                         ) {
-                            Icon(Icons.Default.Mood, contentDescription = null, tint = BorderActive, modifier = Modifier.size(13.dp))
+                            Icon(Icons.Default.Mood, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(13.dp))
                             Spacer(modifier = Modifier.size(4.dp))
                             Text("+ Mood", fontSize = 10.sp, fontFamily = FontFamily.Monospace)
                         }
@@ -266,12 +268,12 @@ fun DashboardScreen(
 
                     OutlinedButton(
                         onClick = onNavigateToLogs,
-                        shape = RoundedCornerShape(4.dp),
+                        shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = BgSurface,
+                            containerColor = Color(0x12FFFFFF),
                             contentColor = TextSecondary
                         ),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x22FFFFFF)),
                         modifier = Modifier
                             .fillMaxWidth()
                             .defaultMinSize(minHeight = 38.dp)
@@ -322,14 +324,14 @@ private fun CockpitReadinessCard(
                 ) {
                     Text(
                         text = "Streak: $streakDays d",
-                        color = StatusNormal,
+                        color = TextSecondary,
                         fontSize = 10.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = "$readinessScore/100",
-                        color = BorderActive,
+                        color = TextPrimary,
                         fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold
@@ -337,16 +339,16 @@ private fun CockpitReadinessCard(
                 }
             }
 
-            // Checklist tasks
+            // Checklist tasks (Apple Frosted Glass Tiles)
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 tasks.forEach { task ->
                     val isDone = task.isCompleted
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(if (isDone) BgApp else BgSurface)
-                            .border(1.dp, if (isDone) StatusNormal.copy(alpha = 0.5f) else BorderSubtle, RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(if (isDone) Color(0x22FFFFFF) else Color(0x0EFFFFFF))
+                            .border(1.dp, if (isDone) Color(0x45FFFFFF) else Color(0x15FFFFFF), RoundedCornerShape(6.dp))
                             .clickable { onToggleTask(task.id) }
                             .padding(horizontal = 7.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -359,7 +361,7 @@ private fun CockpitReadinessCard(
                             Icon(
                                 imageVector = if (isDone) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
                                 contentDescription = task.title,
-                                tint = if (isDone) StatusNormal else TextSecondary,
+                                tint = if (isDone) TextPrimary else TextTertiary,
                                 modifier = Modifier.size(13.dp)
                             )
                             Text(
@@ -373,7 +375,7 @@ private fun CockpitReadinessCard(
 
                         Text(
                             text = task.cadence,
-                            color = TextSecondary.copy(alpha = 0.6f),
+                            color = TextTertiary,
                             fontSize = 9.sp,
                             fontFamily = FontFamily.Monospace
                         )
