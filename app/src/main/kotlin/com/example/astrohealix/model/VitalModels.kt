@@ -30,6 +30,24 @@ enum class DataSource {
     ESTIMATED
 }
 
+enum class DataQuality {
+    VALID,
+    INCOMPLETE,
+    UNVERIFIED,
+    OUTDATED,
+    INVALID
+}
+
+enum class VitalCategory(val title: String, val vitalIds: List<VitalId>) {
+    CARDIOVASCULAR("Cardiovascular", listOf(VitalId.HEART_RATE, VitalId.BLOOD_PRESSURE)),
+    RESPIRATORY("Respiratory", listOf(VitalId.SPO2, VitalId.RESPIRATORY_RATE)),
+    SLEEP_FATIGUE("Sleep & Fatigue", listOf(VitalId.SLEEP_HOURS)),
+    WELLBEING("Psychological Wellbeing", listOf(VitalId.MOOD_INDEX)),
+    EXERCISE("Exercise & Musculoskeletal", listOf(VitalId.BONE_EXERCISE_MIN)),
+    METABOLIC("Metabolic", listOf(VitalId.BLOOD_GLUCOSE, VitalId.HYDRATION_ML, VitalId.BODY_TEMP)),
+    RADIATION("Radiation", listOf(VitalId.RADIATION_MSV))
+}
+
 enum class MissionEnvironment(
     val title: String,
     val shortName: String,
@@ -208,7 +226,8 @@ data class TelemetryPoint(
     val isDisconnected: Boolean = false,
     val isEstimated: Boolean = false,
     val anomalyRule: String? = null,
-    val note: String? = null
+    val note: String? = null,
+    val qualityStatus: DataQuality = DataQuality.VALID
 )
 
 data class VitalCardSnapshot(
@@ -229,7 +248,8 @@ data class VitalCardSnapshot(
     val reason: String,
     val ruleApplied: String?,
     val baseline: PersonalBaseline,
-    val isPendingSync: Boolean = false
+    val isPendingSync: Boolean = false,
+    val qualityStatus: DataQuality = DataQuality.VALID
 )
 
 data class HealthAlert(
@@ -279,6 +299,25 @@ data class ManualLogEntry(
     val isSynced: Boolean = true
 )
 
+data class WellbeingCheckIn(
+    val id: String,
+    val moodScore: Int,
+    val stressLevel: Int,
+    val fatigueLevel: Int,
+    val notes: String? = null,
+    val recordedAt: String,
+    val isPrivate: Boolean = true,
+    val isSelfReported: Boolean = true
+)
+
+data class ConfidentialSupportRequest(
+    val id: String,
+    val category: String,
+    val note: String? = null,
+    val requestedAt: String,
+    val statusLabel: String = "PRIVATE QUEUED"
+)
+
 data class AstronautProfile(
     val id: String = "#A-8842",
     val name: String = "Cmdr. J. Vance",
@@ -288,7 +327,10 @@ data class AstronautProfile(
     val batteryPercent: Int = 94,
     val habitatO2Percent: Float = 20.9f,
     val cabinCo2MmHg: Float = 2.3f,
-    val streakDays: Int = 14
+    val streakDays: Int = 14,
+    val missionDurationDays: Int = 180,
+    val createdAtLabel: String = "Mission Day 1",
+    val isAuthenticated: Boolean = true
 )
 
 data class MissionReport(

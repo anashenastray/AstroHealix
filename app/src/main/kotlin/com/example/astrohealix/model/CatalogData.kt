@@ -328,4 +328,16 @@ object CatalogData {
             xpPoints = 20
         )
     )
+
+    val vitals: List<VitalDefinition>
+        get() = VITAL_DEFINITIONS.values.toList()
+
+    val emergencySymptomsCatalog: List<String> = listOf(
+        "Chest pain or pressure",
+        "Severe difficulty breathing",
+        "Fainting or near-syncope",
+        "Sudden confusion or disorientation",
+        "Sudden vision changes",
+        "Severe neurological symptoms"
+    )
 }

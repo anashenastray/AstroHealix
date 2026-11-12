@@ -1,7 +1,6 @@
 package com.example.astrohealix.ui.theme
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -12,20 +11,29 @@ import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
     primary = BorderActive,
-    onPrimary = BgApp,
-    primaryContainer = BgGlassHover,
+    onPrimary = BgPrimary,
+    primaryContainer = BgSurfaceHover,
     onPrimaryContainer = TextPrimary,
     secondary = StatusNormal,
-    onSecondary = BgApp,
-    background = BgApp,
+    onSecondary = BgPrimary,
+    secondaryContainer = StatusNormalBg,
+    onSecondaryContainer = StatusNormal,
+    tertiary = StatusMonitor,
+    onTertiary = BgPrimary,
+    tertiaryContainer = StatusMonitorBg,
+    onTertiaryContainer = StatusMonitor,
+    background = BgPrimary,
     onBackground = TextPrimary,
     surface = BgSurface,
     onSurface = TextPrimary,
-    surfaceVariant = BgGlassHover,
+    surfaceVariant = BgSurfaceHover,
     onSurfaceVariant = TextSecondary,
     outline = BorderSubtle,
+    outlineVariant = BorderSubtle,
     error = StatusCritical,
-    onError = TextPrimary
+    onError = TextPrimary,
+    errorContainer = StatusCriticalBg,
+    onErrorContainer = StatusCritical
 )
 
 @Composable
@@ -37,8 +45,8 @@ fun AstroHealixTheme(
         SideEffect {
             val window = (view.context as? Activity)?.window
             window?.let {
-                it.statusBarColor = BgApp.toArgb()
-                it.navigationBarColor = BgApp.toArgb()
+                it.statusBarColor = BgPrimary.toArgb()
+                it.navigationBarColor = BgPrimary.toArgb()
                 val controller = WindowCompat.getInsetsController(it, view)
                 controller.isAppearanceLightStatusBars = false
                 controller.isAppearanceLightNavigationBars = false
