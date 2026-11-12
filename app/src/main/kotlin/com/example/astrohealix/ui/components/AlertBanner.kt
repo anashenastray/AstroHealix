@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -32,6 +31,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -89,17 +90,14 @@ fun AlertBanner(
             .alpha(if (alert.isAcknowledged) 0.65f else 1f)
             .clip(cardShape)
             .background(containerBg, cardShape)
+            .drawBehind {
+                drawRect(
+                    color = accentColor,
+                    size = Size(6.dp.toPx(), size.height)
+                )
+            }
             .border(1.dp, borderColor, cardShape)
     ) {
-        // 6px solid left border accent
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .width(6.dp)
-                .matchParentSize()
-                .background(accentColor)
-        )
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -150,7 +148,7 @@ fun AlertBanner(
                     ) {
                         Box(
                             modifier = Modifier
-                                .defaultMinSize(minWidth = 36.dp, minHeight = 36.dp)
+                                .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
                                 .clickable(enabled = onPrevAlert != null) { onPrevAlert?.invoke() },
                             contentAlignment = Alignment.Center
                         ) {
@@ -170,7 +168,7 @@ fun AlertBanner(
                         )
                         Box(
                             modifier = Modifier
-                                .defaultMinSize(minWidth = 36.dp, minHeight = 36.dp)
+                                .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
                                 .clickable(enabled = onNextAlert != null) { onNextAlert?.invoke() },
                             contentAlignment = Alignment.Center
                         ) {
