@@ -9,9 +9,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,266 +35,451 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.astrohealix.model.PersonalBaseline
 import com.example.astrohealix.model.TelemetryPoint
 import com.example.astrohealix.model.VitalDefinition
-import com.example.astrohealix.ui.theme.BgApp
 import com.example.astrohealix.ui.theme.BgSurface
 import com.example.astrohealix.ui.theme.BorderActive
 import com.example.astrohealix.ui.theme.BorderSubtle
-import com.example.astrohealix.ui.theme.GlassCardBorderBrush
-import com.example.astrohealix.ui.theme.GlassCardFillBrush
 import com.example.astrohealix.ui.theme.StatusCritical
 import com.example.astrohealix.ui.theme.StatusMonitor
 import com.example.astrohealix.ui.theme.StatusNormal
 import com.example.astrohealix.ui.theme.StatusUnavailable
-import com.example.astrohealix.ui.theme.TextPrimary
 import com.example.astrohealix.ui.theme.TextSecondary
+import kotlin.math.roundToInt
 
 @Composable
 fun TrendChart(
-    vital: VitalDefinition,
-    points: List<TelemetryPoint>,
-    modifier: Modifier = Modifier
+    history: List<TelemetryPoint>,
+    baseline: PersonalBaseline,
+    unit: String,
+    modifier: Modifier = Modifier,
+    title: String = ""
 ) {
-    var selectedPoint by remember { mutableStateOf<TelemetryPoint?>(null) }
+    var selectedPoint by remember(history) { mutableStateOf<TelemetryPoint?>(null) }
 
-    val baseline = vital.baseline
-    val validValues = points.mapNotNull { it.value }
-    val dataMin = validValues.minOrNull() ?: baseline.nominalMin
-    val dataMax = validValues.maxOrNull() ?: baseline.nominalMax
+    val validValues = history.filter { !it.isDisconnected }.mapNotNull { it.value }
+    val rawCandidates = buildList {
+        addAll(validValues)
+        add(baseline.nominalMin)
+        add(baseline.nominalMax)
+        baseline.monitorLow?.let { add(it) }
+        baseline.monitorHigh?.let { add(it) }
+        baseline.criticalLow?.let { add(it) }
+        baseline.criticalHigh?.let { add(it) }
+    }
+    val rawMin = rawCandidates.minOrNull() ?: 0f
+    val rawMax = rawCandidates.maxOrNull() ?: 100f
+    val rawSpan = (rawMax - rawMin).coerceAtLeast(1f)
+    val pad = (rawSpan * 0.12f).coerceAtLeast(0.5f)
+    val yMin = rawMin - pad
+    val yMax = rawMax + pad
+    val yRange = (yMax - yMin).coerceAtLeast(1f)
+    val yMid = (yMin + yMax) / 2f
 
-    val yMin = minOf(dataMin, baseline.criticalLow ?: baseline.nominalMin, baseline.nominalMin - 5f)
-    val yMax = maxOf(dataMax, baseline.criticalHigh ?: baseline.nominalMax, baseline.nominalMax + 10f)
-    val yRange = (yMax - yMin).coerceAtLeast(10f)
+    val useDecimals = yRange < 12f || unit in setOf("°C", "mSv/d", "hrs", "/10")
+    fun formatAxisValue(v: Float): String =
+        if (useDecimals) "%.1f".format(v) else v.roundToInt().toString()
+
+    val cardShape = RoundedCornerShape(8.dp)
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(GlassCardFillBrush)
-            .border(1.dp, GlassCardBorderBrush, RoundedCornerShape(8.dp))
-            .padding(14.dp),
+            .clip(cardShape)
+            .background(BgSurface, cardShape)
+            .border(1.dp, BorderSubtle, cardShape)
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Chart Header Row: Title & Tooltip Readout
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "${vital.title.uppercase()} (${vital.unit}) vs PERSONAL BASELINE",
-                color = TextSecondary,
-                fontSize = 12.sp,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold
-            )
-
-            selectedPoint?.let { pt ->
-                val vStr = pt.value?.let { if (vital.precision > 0) "%.${vital.precision}f".format(it) else it.toInt().toString() } ?: "N/A"
+        // Header Row (Title & Scrubbed Tooltip)
+        if (title.isNotBlank() || selectedPoint != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = "${pt.timeLabel}: $vStr ${vital.unit} [${pt.source.name}]",
-                    color = TextPrimary,
+                    text = if (title.isNotBlank()) title else "TELEMETRY TREND ($unit)",
+                    color = TextSecondary,
                     fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
+
+                selectedPoint?.let { pt ->
+                    val valLabel = if (pt.isDisconnected || pt.value == null) {
+                        "NO DATA"
+                    } else {
+                        "${formatAxisValue(pt.value)} $unit"
+                    }
+                    Text(
+                        text = "${pt.timeLabel}: $valLabel [${pt.source.name}]",
+                        color = BorderActive,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
             }
         }
 
-        // Main Canvas
-        Box(
+        // Y-Axis Labels + Canvas Plot Area
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
-                .defaultMinSize(minHeight = 160.dp)
+                .weight(1f, fill = true)
+                .defaultMinSize(minHeight = 120.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Canvas(
+            // Y-axis value labels
+            Column(
                 modifier = Modifier
-                    .matchParentSize()
-                    .pointerInput(points) {
-                        detectTapGestures { offset ->
-                            if (points.isNotEmpty()) {
-                                val stepX = size.width / (points.size - 1).coerceAtLeast(1)
-                                val idx = (offset.x / stepX).toInt().coerceIn(0, points.size - 1)
-                                selectedPoint = points[idx]
+                    .width(44.dp)
+                    .fillMaxHeight()
+                    .padding(end = 6.dp, top = 4.dp, bottom = 4.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
+                horizontalAlignment = Alignment.End
+            ) {
+                Text(
+                    text = formatAxisValue(yMax),
+                    color = TextSecondary,
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.Monospace,
+                    maxLines = 1
+                )
+                Text(
+                    text = formatAxisValue(yMid),
+                    color = TextSecondary,
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.Monospace,
+                    maxLines = 1
+                )
+                Text(
+                    text = formatAxisValue(yMin),
+                    color = TextSecondary,
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.Monospace,
+                    maxLines = 1
+                )
+            }
+
+            // Chart Canvas
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            ) {
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(history) {
+                            detectTapGestures { offset ->
+                                if (history.isNotEmpty()) {
+                                    val hPad = 8.dp.toPx()
+                                    val plotW = (size.width - hPad * 2f).coerceAtLeast(1f)
+                                    val idx = if (history.size == 1) {
+                                        0
+                                    } else {
+                                        val stepX = plotW / (history.size - 1)
+                                        ((offset.x - hPad) / stepX).roundToInt()
+                                            .coerceIn(0, history.size - 1)
+                                    }
+                                    selectedPoint = history[idx]
+                                }
                             }
                         }
+                ) {
+                    val hPad = 8.dp.toPx()
+                    val vPad = 8.dp.toPx()
+                    val plotWidth = (size.width - hPad * 2f).coerceAtLeast(1f)
+                    val plotHeight = (size.height - vPad * 2f).coerceAtLeast(1f)
+
+                    fun getX(index: Int): Float {
+                        if (history.size <= 1) return hPad + plotWidth * 0.5f
+                        return hPad + (index.toFloat() / (history.size - 1)) * plotWidth
                     }
-            ) {
-                val width = size.width
-                val height = size.height
 
-                fun getY(value: Float): Float {
-                    val normalized = (value - yMin) / yRange
-                    return height - (normalized * height).coerceIn(0f, height)
-                }
-
-                // 1. Shaded Personal Baseline Nominal Zone (Apple Frosted Glass Envelope)
-                val baselineTopY = getY(baseline.nominalMax)
-                val baselineBottomY = getY(baseline.nominalMin)
-                drawRect(
-                    color = Color(0x0EFFFFFF),
-                    topLeft = Offset(0f, baselineTopY),
-                    size = Size(width, (baselineBottomY - baselineTopY).coerceAtLeast(2f))
-                )
-
-                // 2. Dotted horizontal gridlines
-                val dottedEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f), 0f)
-
-                baseline.criticalHigh?.let { cHigh ->
-                    val cy = getY(cHigh)
-                    drawLine(
-                        color = Color(0x35FFFFFF),
-                        start = Offset(0f, cy),
-                        end = Offset(width, cy),
-                        strokeWidth = 1f,
-                        pathEffect = dottedEffect
-                    )
-                }
-
-                drawLine(
-                    color = Color(0x18FFFFFF),
-                    start = Offset(0f, baselineTopY),
-                    end = Offset(width, baselineTopY),
-                    strokeWidth = 1f,
-                    pathEffect = dottedEffect
-                )
-
-                drawLine(
-                    color = Color(0x18FFFFFF),
-                    start = Offset(0f, baselineBottomY),
-                    end = Offset(width, baselineBottomY),
-                    strokeWidth = 1f,
-                    pathEffect = dottedEffect
-                )
-
-                baseline.criticalLow?.let { cLow ->
-                    val cy = getY(cLow)
-                    drawLine(
-                        color = Color(0x35FFFFFF),
-                        start = Offset(0f, cy),
-                        end = Offset(width, cy),
-                        strokeWidth = 1f,
-                        pathEffect = dottedEffect
-                    )
-                }
-
-                if (points.isEmpty()) return@Canvas
-
-                val stepX = width / (points.size - 1).coerceAtLeast(1)
-
-                // 3. Render Disconnected Gap Spans
-                var gapStartIndex: Int? = null
-                for (i in points.indices) {
-                    val pt = points[i]
-                    if (pt.isDisconnected || pt.value == null) {
-                        if (gapStartIndex == null) gapStartIndex = i
-                    } else if (gapStartIndex != null) {
-                        val gx1 = gapStartIndex * stepX
-                        val gx2 = i * stepX
-                        drawRect(
-                            color = Color(0x15FFFFFF),
-                            topLeft = Offset(gx1, 0f),
-                            size = Size(gx2 - gx1, height)
-                        )
-                        gapStartIndex = null
+                    fun getY(value: Float): Float {
+                        val normalized = ((value - yMin) / yRange).coerceIn(0f, 1f)
+                        return vPad + plotHeight * (1f - normalized)
                     }
-                }
-                if (gapStartIndex != null) {
-                    val gx1 = gapStartIndex * stepX
+
+                    val dashEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f), 0f)
+
+                    // 1. Nominal baseline semi-transparent green band
+                    val nominalTopY = getY(baseline.nominalMax)
+                    val nominalBottomY = getY(baseline.nominalMin)
                     drawRect(
-                        color = Color(0x15FFFFFF),
-                        topLeft = Offset(gx1, 0f),
-                        size = Size(width - gx1, height)
+                        color = StatusNormal.copy(alpha = 0.14f),
+                        topLeft = Offset(0f, nominalTopY),
+                        size = Size(size.width, (nominalBottomY - nominalTopY).coerceAtLeast(2f))
                     )
-                }
 
-                // 4. Plot Telemetry Segments (Apple Stark White Specular Line)
-                var currentPath = Path()
-                var pathHasPoints = false
-                var isSegmentEstimated = false
+                    // Nominal dashed boundary lines
+                    drawLine(
+                        color = StatusNormal.copy(alpha = 0.45f),
+                        start = Offset(0f, nominalTopY),
+                        end = Offset(size.width, nominalTopY),
+                        strokeWidth = 1.dp.toPx(),
+                        pathEffect = dashEffect
+                    )
+                    drawLine(
+                        color = StatusNormal.copy(alpha = 0.45f),
+                        start = Offset(0f, nominalBottomY),
+                        end = Offset(size.width, nominalBottomY),
+                        strokeWidth = 1.dp.toPx(),
+                        pathEffect = dashEffect
+                    )
 
-                for (i in points.indices) {
-                    val pt = points[i]
-                    val px = i * stepX
-
-                    if (pt.isDisconnected || pt.value == null) {
-                        if (pathHasPoints) {
-                            drawPath(
-                                path = currentPath,
-                                color = TextPrimary,
-                                style = Stroke(
-                                    width = 2.2f.dp.toPx(),
-                                    pathEffect = if (isSegmentEstimated) dottedEffect else null
-                                )
-                            )
-                            currentPath = Path()
-                            pathHasPoints = false
-                        }
-                    } else {
-                        val py = getY(pt.value)
-                        if (!pathHasPoints) {
-                            currentPath.moveTo(px, py)
-                            pathHasPoints = true
-                            isSegmentEstimated = pt.isEstimated
-                        } else {
-                            currentPath.lineTo(px, py)
-                        }
-
-                        // Point circle
-                        val ptColor = if (pt.anomalyRule != null) Color(0xFFFFFFFF)
-                        else if (pt.isEstimated) Color(0x70FFFFFF)
-                        else TextPrimary
-
-                        if (pt.anomalyRule != null) {
-                            drawCircle(
-                                color = Color(0x40FFFFFF),
-                                radius = 7.dp.toPx(),
-                                center = Offset(px, py)
-                            )
-                        }
-
-                        drawCircle(
-                            color = ptColor,
-                            radius = 3.dp.toPx(),
-                            center = Offset(px, py)
+                    // Critical dashed boundary lines
+                    baseline.criticalHigh?.let { cHigh ->
+                        val cy = getY(cHigh)
+                        drawLine(
+                            color = StatusCritical.copy(alpha = 0.5f),
+                            start = Offset(0f, cy),
+                            end = Offset(size.width, cy),
+                            strokeWidth = 1.dp.toPx(),
+                            pathEffect = dashEffect
                         )
+                    }
+                    baseline.criticalLow?.let { cLow ->
+                        val cy = getY(cLow)
+                        drawLine(
+                            color = StatusCritical.copy(alpha = 0.5f),
+                            start = Offset(0f, cy),
+                            end = Offset(size.width, cy),
+                            strokeWidth = 1.dp.toPx(),
+                            pathEffect = dashEffect
+                        )
+                    }
+
+                    if (history.isEmpty()) return@Canvas
+
+                    // 2. Gap shading spans for disconnected / null regions
+                    var gapStartIdx: Int? = null
+                    for (i in history.indices) {
+                        val pt = history[i]
+                        val isGap = pt.isDisconnected || pt.value == null
+                        if (isGap) {
+                            if (gapStartIdx == null) gapStartIdx = i
+                        } else if (gapStartIdx != null) {
+                            val gx1 = getX(gapStartIdx)
+                            val gx2 = getX(i)
+                            drawRect(
+                                color = StatusUnavailable.copy(alpha = 0.18f),
+                                topLeft = Offset(gx1, 0f),
+                                size = Size((gx2 - gx1).coerceAtLeast(4.dp.toPx()), size.height)
+                            )
+                            gapStartIdx = null
+                        }
+                    }
+                    if (gapStartIdx != null) {
+                        val gx1 = getX(gapStartIdx)
+                        drawRect(
+                            color = StatusUnavailable.copy(alpha = 0.18f),
+                            topLeft = Offset(gx1, 0f),
+                            size = Size((size.width - gx1).coerceAtLeast(4.dp.toPx()), size.height)
+                        )
+                    }
+
+                    // 3. Connected line segments + dashed bridges over gaps
+                    var activePath = Path()
+                    var pathOpen = false
+                    var lastValidOffset: Offset? = null
+                    var sawGapSinceLastValid = false
+
+                    for (i in history.indices) {
+                        val pt = history[i]
+                        val v = pt.value
+                        val isGap = pt.isDisconnected || v == null
+                        if (isGap) {
+                            if (pathOpen) {
+                                drawPath(
+                                    path = activePath,
+                                    color = BorderActive,
+                                    style = Stroke(width = 2.dp.toPx())
+                                )
+                                activePath = Path()
+                                pathOpen = false
+                            }
+                            sawGapSinceLastValid = true
+                        } else {
+                            val px = getX(i)
+                            val py = getY(v)
+                            val currOffset = Offset(px, py)
+
+                            if (sawGapSinceLastValid && lastValidOffset != null) {
+                                // Dashed gap indicator across disconnected span
+                                drawLine(
+                                    color = StatusUnavailable.copy(alpha = 0.8f),
+                                    start = lastValidOffset,
+                                    end = currOffset,
+                                    strokeWidth = 1.5.dp.toPx(),
+                                    pathEffect = dashEffect
+                                )
+                            }
+
+                            if (!pathOpen) {
+                                activePath.moveTo(px, py)
+                                pathOpen = true
+                            } else {
+                                activePath.lineTo(px, py)
+                            }
+
+                            lastValidOffset = currOffset
+                            sawGapSinceLastValid = false
+                        }
+                    }
+
+                    if (pathOpen) {
+                        drawPath(
+                            path = activePath,
+                            color = BorderActive,
+                            style = Stroke(width = 2.dp.toPx())
+                        )
+                    }
+
+                    // 4. Data points (status color + hollow for estimated)
+                    for (i in history.indices) {
+                        val pt = history[i]
+                        val v = pt.value
+                        if (pt.isDisconnected || v == null) continue
+
+                        val px = getX(i)
+                        val py = getY(v)
+                        val center = Offset(px, py)
+
+                        val isCriticalPt = (baseline.criticalLow != null && v <= baseline.criticalLow) ||
+                            (baseline.criticalHigh != null && v >= baseline.criticalHigh)
+                        val isMonitorPt = !isCriticalPt && (
+                            v < baseline.nominalMin ||
+                                v > baseline.nominalMax ||
+                                (baseline.monitorLow != null && v <= baseline.monitorLow) ||
+                                (baseline.monitorHigh != null && v >= baseline.monitorHigh)
+                            )
+
+                        val ptColor = when {
+                            isCriticalPt -> StatusCritical
+                            isMonitorPt -> StatusMonitor
+                            else -> StatusNormal
+                        }
+
+                        if (selectedPoint == pt) {
+                            drawLine(
+                                color = BorderActive.copy(alpha = 0.5f),
+                                start = Offset(px, 0f),
+                                end = Offset(px, size.height),
+                                strokeWidth = 1.dp.toPx()
+                            )
+                        }
+
+                        if (isCriticalPt) {
+                            drawCircle(
+                                color = StatusCritical.copy(alpha = 0.25f),
+                                radius = 7.dp.toPx(),
+                                center = center
+                            )
+                        }
+
+                        if (pt.isEstimated) {
+                            // Hollow circle for estimated points
+                            drawCircle(
+                                color = BgSurface,
+                                radius = 4.dp.toPx(),
+                                center = center
+                            )
+                            drawCircle(
+                                color = ptColor,
+                                radius = 4.dp.toPx(),
+                                center = center,
+                                style = Stroke(width = 2.dp.toPx())
+                            )
+                        } else {
+                            drawCircle(
+                                color = ptColor,
+                                radius = 3.5.dp.toPx(),
+                                center = center
+                            )
+                        }
                     }
                 }
 
-                if (pathHasPoints) {
-                    drawPath(
-                        path = currentPath,
-                        color = TextPrimary,
-                        style = Stroke(
-                            width = 2.2f.dp.toPx(),
-                            pathEffect = if (isSegmentEstimated) dottedEffect else null
-                        )
+                if (history.isEmpty()) {
+                    Text(
+                        text = "No telemetry history recorded",
+                        color = TextSecondary,
+                        fontSize = 12.sp,
+                        fontFamily = FontFamily.Monospace,
+                        modifier = Modifier.align(Alignment.Center)
                     )
                 }
             }
         }
 
-        // Legend Row
+        // X-axis time labels
+        if (history.isNotEmpty()) {
+            val tickLabels = remember(history) {
+                val indices = if (history.size <= 4) {
+                    history.indices.toList()
+                } else {
+                    listOf(
+                        0,
+                        history.lastIndex / 3,
+                        (history.lastIndex * 2) / 3,
+                        history.lastIndex
+                    ).distinct()
+                }
+                indices.map { history[it].timeLabel }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 44.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                tickLabels.forEach { label ->
+                    Text(
+                        text = label,
+                        color = TextSecondary,
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+
+        // Compact Legend Row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                LegendItem(color = TextPrimary, label = "Nominal Telemetry")
-                LegendItem(color = Color(0x35FFFFFF), label = "Personal Baseline")
-                LegendItem(color = Color(0x15FFFFFF), label = "[GAP / NO DATA]")
-                LegendItem(color = TextPrimary, label = "Anomaly Spike")
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ChartLegendItem(color = StatusNormal, label = "Nominal")
+                ChartLegendItem(color = StatusMonitor, label = "Monitor")
+                ChartLegendItem(color = StatusCritical, label = "Critical")
+                ChartLegendItem(color = StatusMonitor, label = "Est.", hollow = true)
+                ChartLegendItem(color = StatusUnavailable, label = "Gap")
             }
 
             Text(
-                text = "Tap to scrub",
-                color = TextSecondary.copy(alpha = 0.6f),
+                text = "Tap point",
+                color = TextSecondary,
                 fontSize = 10.sp,
                 fontFamily = FontFamily.Monospace
             )
@@ -299,22 +488,52 @@ fun TrendChart(
 }
 
 @Composable
-private fun LegendItem(color: Color, label: String) {
+fun TrendChart(
+    vital: VitalDefinition,
+    points: List<TelemetryPoint>,
+    modifier: Modifier = Modifier
+) {
+    TrendChart(
+        history = points,
+        baseline = vital.baseline,
+        unit = vital.unit,
+        modifier = modifier,
+        title = "${vital.title.uppercase()} (${vital.unit}) vs PERSONAL BASELINE"
+    )
+}
+
+@Composable
+private fun ChartLegendItem(
+    color: Color,
+    label: String,
+    hollow: Boolean = false
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .padding(vertical = 2.dp)
-                .background(color, RoundedCornerShape(2.dp))
-                .padding(horizontal = 4.dp, vertical = 2.dp)
-        )
+        if (hollow) {
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(BgSurface, CircleShape)
+                    .border(1.5.dp, color, CircleShape)
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(color, CircleShape)
+            )
+        }
         Text(
             text = label,
             color = TextSecondary,
             fontSize = 10.sp,
-            fontFamily = FontFamily.Monospace
+            fontFamily = FontFamily.Monospace,
+            maxLines = 1
         )
     }
 }
