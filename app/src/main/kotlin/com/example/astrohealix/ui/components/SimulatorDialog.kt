@@ -1,5 +1,6 @@
 package com.example.astrohealix.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,15 +22,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.astrohealix.model.SimulationScenario
-import com.example.astrohealix.ui.theme.GlassElevatedBorderBrush
-import com.example.astrohealix.ui.theme.GlassModalFillBrush
+import com.example.astrohealix.ui.theme.BgPrimary
+import com.example.astrohealix.ui.theme.BgSurface
+import com.example.astrohealix.ui.theme.BgSurfaceHover
+import com.example.astrohealix.ui.theme.BorderActive
+import com.example.astrohealix.ui.theme.BorderSubtle
+import com.example.astrohealix.ui.theme.StatusCritical
+import com.example.astrohealix.ui.theme.StatusMonitor
+import com.example.astrohealix.ui.theme.StatusMonitorBg
+import com.example.astrohealix.ui.theme.StatusNormal
 import com.example.astrohealix.ui.theme.TextPrimary
 import com.example.astrohealix.ui.theme.TextSecondary
 
@@ -46,16 +53,16 @@ fun SimulatorDialog(
             modifier = Modifier
                 .widthIn(max = 540.dp)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(GlassModalFillBrush)
-                .border(1.dp, GlassElevatedBorderBrush, RoundedCornerShape(14.dp))
-                .padding(20.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(BgSurface)
+                .border(1.dp, BorderSubtle, RoundedCornerShape(8.dp))
+                .padding(16.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Header
                 Row(
@@ -66,44 +73,90 @@ fun SimulatorDialog(
                     Text(
                         text = "MISSION TELEMETRY SIMULATOR",
                         color = TextPrimary,
-                        fontSize = 13.sp,
+                        fontSize = 14.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "HACKATHON VERIFIER",
-                        color = TextSecondary,
-                        fontSize = 10.sp,
+                        text = "VITA-SYS SIM",
+                        color = BorderActive,
+                        fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold
                     )
                 }
 
+                // Prominent [DEMO DATA] Banner Badge
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(StatusMonitorBg)
+                        .border(1.dp, StatusMonitor, RoundedCornerShape(8.dp))
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(BgPrimary)
+                            .border(1.dp, StatusMonitor, RoundedCornerShape(4.dp))
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "[DEMO DATA]",
+                            color = StatusMonitor,
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.05.sp
+                        )
+                    }
+                    Text(
+                        text = "Simulated spaceflight telemetry stream for validation and crew protocol drills. Not live flight sensor hardware.",
+                        color = TextPrimary,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
+                        fontFamily = FontFamily.SansSerif
+                    )
+                }
+
                 Text(
-                    text = "Select any scenario to inject live spaceflight conditions, sensor dropouts, network blackouts, or medical rule triggers:",
+                    text = "Select a scenario to inject spaceflight telemetry conditions, sensor dropouts, link blackouts, or threshold alerts:",
                     color = TextSecondary,
-                    fontSize = 12.sp,
+                    fontSize = 13.sp,
                     fontFamily = FontFamily.SansSerif,
-                    lineHeight = 16.sp
+                    lineHeight = 18.sp
                 )
 
-                // Scenarios list
+                // Scenario Cards
                 SimulationScenario.entries.forEach { scenario ->
                     val isSelected = scenario == activeScenario
+                    val badgeColor = when (scenario.badge) {
+                        "CRITICAL" -> StatusCritical
+                        "ANOMALY", "STEP 2 DEMO", "BEHAVIORAL" -> StatusMonitor
+                        "DEFAULT" -> StatusNormal
+                        else -> BorderActive
+                    }
 
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .defaultMinSize(minHeight = 48.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (isSelected) Color(0x35FFFFFF) else Color(0x0EFFFFFF))
-                            .border(1.dp, if (isSelected) Color(0x70FFFFFF) else Color(0x18FFFFFF), RoundedCornerShape(8.dp))
+                            .background(if (isSelected) BgSurfaceHover else BgPrimary)
+                            .border(
+                                width = if (isSelected) 1.5.dp else 1.dp,
+                                color = if (isSelected) BorderActive else BorderSubtle,
+                                shape = RoundedCornerShape(8.dp)
+                            )
                             .clickable {
                                 onSelectScenario(scenario)
                                 onDismiss()
                             }
-                            .padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -113,14 +166,15 @@ fun SimulatorDialog(
                             Text(
                                 text = scenario.title,
                                 color = TextPrimary,
-                                fontSize = 13.sp,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.SansSerif
+                                fontFamily = FontFamily.SansSerif,
+                                modifier = Modifier.weight(1f)
                             )
                             Text(
                                 text = "[${scenario.badge}]",
-                                color = if (isSelected) TextPrimary else TextSecondary,
-                                fontSize = 10.sp,
+                                color = if (isSelected) BorderActive else badgeColor,
+                                fontSize = 11.sp,
                                 fontFamily = FontFamily.Monospace,
                                 fontWeight = FontWeight.Bold
                             )
@@ -129,24 +183,24 @@ fun SimulatorDialog(
                         Text(
                             text = scenario.description,
                             color = TextSecondary,
-                            fontSize = 11.sp,
-                            lineHeight = 15.sp,
+                            fontSize = 12.sp,
+                            lineHeight = 17.sp,
                             fontFamily = FontFamily.SansSerif
                         )
                     }
                 }
 
-                // Manual Toggle Offline Link
+                // Offline Link Toggle
                 OutlinedButton(
                     onClick = {
                         onToggleOffline()
                         onDismiss()
                     },
                     colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color(0x25FFFFFF),
-                        contentColor = TextPrimary
+                        containerColor = if (isOffline) StatusMonitorBg else BgSurfaceHover,
+                        contentColor = if (isOffline) StatusMonitor else TextPrimary
                     ),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x55FFFFFF)),
+                    border = BorderStroke(1.dp, if (isOffline) StatusMonitor else BorderActive),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -156,24 +210,28 @@ fun SimulatorDialog(
                         text = if (isOffline) "Restore Satellite Link (Sync Queue)" else "Simulate Link Interruption (Offline Cache)",
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.SansSerif,
-                        fontSize = 12.sp
+                        fontSize = 13.sp
                     )
                 }
 
-                // Close CTA
+                // Close Button
                 OutlinedButton(
                     onClick = onDismiss,
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color(0x10FFFFFF),
+                        containerColor = BgPrimary,
                         contentColor = TextSecondary
                     ),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x20FFFFFF)),
+                    border = BorderStroke(1.dp, BorderSubtle),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .defaultMinSize(minHeight = 44.dp)
+                        .defaultMinSize(minHeight = 48.dp)
                 ) {
-                    Text("Close Controls", fontFamily = FontFamily.SansSerif)
+                    Text(
+                        text = "Close Controls",
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
         }

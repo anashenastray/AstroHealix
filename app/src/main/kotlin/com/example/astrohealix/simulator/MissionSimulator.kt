@@ -1,6 +1,6 @@
 package com.example.astrohealix.simulator
 
-import com.example.astrohealix.model.CatalogData
+import com.example.astrohealix.model.DataQuality
 import com.example.astrohealix.model.DataSource
 import com.example.astrohealix.model.MissionEnvironment
 import com.example.astrohealix.model.SimulationScenario
@@ -34,22 +34,22 @@ class MissionSimulator {
 
         if (scenario == SimulationScenario.SLEEP_DEPRIVATION_DRIFT) {
             historyByVital[VitalId.SLEEP_HOURS]?.apply {
-                add(TelemetryPoint(nowMs - 48 * 3600_000L, "2d ago", VitalId.SLEEP_HOURS, 5.5f, source = DataSource.MANUAL))
-                add(TelemetryPoint(nowMs - 24 * 3600_000L, "1d ago", VitalId.SLEEP_HOURS, 5.2f, source = DataSource.MANUAL))
-                add(TelemetryPoint(nowMs, "Now", VitalId.SLEEP_HOURS, 5.1f, source = DataSource.MANUAL, anomalyRule = "Sleep Drift Rule (3 Consecutive Cycles)"))
+                add(TelemetryPoint(nowMs - 48 * 3600_000L, "2d ago", VitalId.SLEEP_HOURS, 5.5f, source = DataSource.MANUAL, qualityStatus = DataQuality.VALID))
+                add(TelemetryPoint(nowMs - 24 * 3600_000L, "1d ago", VitalId.SLEEP_HOURS, 5.2f, source = DataSource.MANUAL, qualityStatus = DataQuality.VALID))
+                add(TelemetryPoint(nowMs, "Now", VitalId.SLEEP_HOURS, 5.1f, source = DataSource.MANUAL, anomalyRule = "Sleep Drift Rule (3 Consecutive Cycles)", qualityStatus = DataQuality.VALID))
             }
             historyByVital[VitalId.MOOD_INDEX]?.add(
-                TelemetryPoint(nowMs, "Now", VitalId.MOOD_INDEX, 4.4f, source = DataSource.MANUAL)
+                TelemetryPoint(nowMs, "Now", VitalId.MOOD_INDEX, 4.4f, source = DataSource.MANUAL, qualityStatus = DataQuality.VALID)
             )
             historyByVital[VitalId.BLOOD_GLUCOSE]?.add(
-                TelemetryPoint(nowMs, "Now", VitalId.BLOOD_GLUCOSE, 152f, source = DataSource.MANUAL)
+                TelemetryPoint(nowMs, "Now", VitalId.BLOOD_GLUCOSE, 152f, source = DataSource.MANUAL, qualityStatus = DataQuality.VALID)
             )
         } else if (scenario == SimulationScenario.NOMINAL_CRUISE) {
             historyByVital[VitalId.SLEEP_HOURS]?.add(
-                TelemetryPoint(nowMs, "04h ago", VitalId.SLEEP_HOURS, 5.33f, source = DataSource.MANUAL)
+                TelemetryPoint(nowMs, "04h ago", VitalId.SLEEP_HOURS, 5.33f, source = DataSource.MANUAL, qualityStatus = DataQuality.VALID)
             )
             historyByVital[VitalId.MOOD_INDEX]?.add(
-                TelemetryPoint(nowMs, "2h ago", VitalId.MOOD_INDEX, 7.8f, source = DataSource.MANUAL)
+                TelemetryPoint(nowMs, "2h ago", VitalId.MOOD_INDEX, 7.8f, source = DataSource.MANUAL, qualityStatus = DataQuality.VALID)
             )
         }
         stepTick()
@@ -79,6 +79,12 @@ class MissionSimulator {
             val isEstimated = i == 13 || i == 17
             val isSpike = i == 33
 
+            val pointQuality = when {
+                isGap -> DataQuality.INCOMPLETE
+                isEstimated -> DataQuality.UNVERIFIED
+                else -> DataQuality.VALID
+            }
+
             val hrVal = if (isGap) null else if (isSpike) 94f else (71f + sin(phase * Math.PI.toFloat() * 3f) * 5f + pseudoNoise(i) * 3f)
 
             historyByVital[VitalId.HEART_RATE]?.add(
@@ -91,7 +97,8 @@ class MissionSimulator {
                     isDisconnected = isGap,
                     isEstimated = isEstimated,
                     anomalyRule = if (isSpike) "Baseline Delta Rule 5.2" else null,
-                    note = if (isSpike) "Treadmill calibration excursion" else null
+                    note = if (isSpike) "Treadmill calibration excursion" else null,
+                    qualityStatus = pointQuality
                 )
             )
 
@@ -103,7 +110,8 @@ class MissionSimulator {
                     value = if (isGap) null else (98f + pseudoNoise(i + 11) * 1.2f).coerceIn(95f, 100f),
                     source = if (isEstimated) DataSource.ESTIMATED else DataSource.SENSOR,
                     isDisconnected = isGap,
-                    isEstimated = isEstimated
+                    isEstimated = isEstimated,
+                    qualityStatus = pointQuality
                 )
             )
 
@@ -115,7 +123,8 @@ class MissionSimulator {
                     value = if (isGap) null else (14f + sin(phase * Math.PI.toFloat() * 2f) * 1.5f + pseudoNoise(i + 23)),
                     source = if (isEstimated) DataSource.ESTIMATED else DataSource.SENSOR,
                     isDisconnected = isGap,
-                    isEstimated = isEstimated
+                    isEstimated = isEstimated,
+                    qualityStatus = pointQuality
                 )
             )
 
@@ -126,7 +135,8 @@ class MissionSimulator {
                     vitalId = VitalId.RADIATION_MSV,
                     value = if (isGap) null else (0.64f + abs(sin(phase * Math.PI.toFloat() * 4f)) * 0.25f + pseudoNoise(i + 37) * 0.05f),
                     source = DataSource.SENSOR,
-                    isDisconnected = isGap
+                    isDisconnected = isGap,
+                    qualityStatus = if (isGap) DataQuality.INCOMPLETE else DataQuality.VALID
                 )
             )
 
@@ -138,7 +148,8 @@ class MissionSimulator {
                         vitalId = VitalId.BLOOD_PRESSURE,
                         value = 116f + pseudoNoise(i + 41) * 5f,
                         secondaryValue = 75f + pseudoNoise(i + 42) * 4f,
-                        source = DataSource.MANUAL
+                        source = DataSource.MANUAL,
+                        qualityStatus = DataQuality.VALID
                     )
                 )
                 historyByVital[VitalId.BODY_TEMP]?.add(
@@ -147,7 +158,8 @@ class MissionSimulator {
                         timeLabel = timeLabel,
                         vitalId = VitalId.BODY_TEMP,
                         value = 36.8f + pseudoNoise(i + 53) * 0.25f,
-                        source = DataSource.MANUAL
+                        source = DataSource.MANUAL,
+                        qualityStatus = DataQuality.VALID
                     )
                 )
                 historyByVital[VitalId.BLOOD_GLUCOSE]?.add(
@@ -156,32 +168,33 @@ class MissionSimulator {
                         timeLabel = timeLabel,
                         vitalId = VitalId.BLOOD_GLUCOSE,
                         value = 96f + sin(phase * Math.PI.toFloat() * 4f) * 14f + pseudoNoise(i + 61) * 5f,
-                        source = DataSource.MANUAL
+                        source = DataSource.MANUAL,
+                        qualityStatus = DataQuality.VALID
                     )
                 )
             }
         }
 
         historyByVital[VitalId.SLEEP_HOURS]?.apply {
-            add(TelemetryPoint(nowMs - 48 * 3600_000L, "2d ago", VitalId.SLEEP_HOURS, 7.1f, source = DataSource.MANUAL))
-            add(TelemetryPoint(nowMs - 24 * 3600_000L, "1d ago", VitalId.SLEEP_HOURS, 6.4f, source = DataSource.MANUAL))
-            add(TelemetryPoint(nowMs - 4 * 3600_000L, "04h ago", VitalId.SLEEP_HOURS, 5.33f, source = DataSource.MANUAL))
+            add(TelemetryPoint(nowMs - 48 * 3600_000L, "2d ago", VitalId.SLEEP_HOURS, 7.1f, source = DataSource.MANUAL, qualityStatus = DataQuality.VALID))
+            add(TelemetryPoint(nowMs - 24 * 3600_000L, "1d ago", VitalId.SLEEP_HOURS, 6.4f, source = DataSource.MANUAL, qualityStatus = DataQuality.VALID))
+            add(TelemetryPoint(nowMs - 4 * 3600_000L, "04h ago", VitalId.SLEEP_HOURS, 5.33f, source = DataSource.MANUAL, qualityStatus = DataQuality.VALID))
         }
 
         historyByVital[VitalId.HYDRATION_ML]?.apply {
-            add(TelemetryPoint(nowMs - 6 * 3600_000L, "6h ago", VitalId.HYDRATION_ML, 900f, source = DataSource.MANUAL))
-            add(TelemetryPoint(nowMs - 3 * 3600_000L, "3h ago", VitalId.HYDRATION_ML, 1450f, source = DataSource.MANUAL))
-            add(TelemetryPoint(nowMs - 70 * 60_000L, "1h 10m ago", VitalId.HYDRATION_ML, 1800f, source = DataSource.MANUAL))
+            add(TelemetryPoint(nowMs - 6 * 3600_000L, "6h ago", VitalId.HYDRATION_ML, 900f, source = DataSource.MANUAL, qualityStatus = DataQuality.VALID))
+            add(TelemetryPoint(nowMs - 3 * 3600_000L, "3h ago", VitalId.HYDRATION_ML, 1450f, source = DataSource.MANUAL, qualityStatus = DataQuality.VALID))
+            add(TelemetryPoint(nowMs - 70 * 60_000L, "1h 10m ago", VitalId.HYDRATION_ML, 1800f, source = DataSource.MANUAL, qualityStatus = DataQuality.VALID))
         }
 
         historyByVital[VitalId.MOOD_INDEX]?.apply {
-            add(TelemetryPoint(nowMs - 24 * 3600_000L, "1d ago", VitalId.MOOD_INDEX, 8.2f, source = DataSource.MANUAL))
-            add(TelemetryPoint(nowMs - 2 * 3600_000L, "2h ago", VitalId.MOOD_INDEX, 7.8f, source = DataSource.MANUAL))
+            add(TelemetryPoint(nowMs - 24 * 3600_000L, "1d ago", VitalId.MOOD_INDEX, 8.2f, source = DataSource.MANUAL, qualityStatus = DataQuality.VALID))
+            add(TelemetryPoint(nowMs - 2 * 3600_000L, "2h ago", VitalId.MOOD_INDEX, 7.8f, source = DataSource.MANUAL, qualityStatus = DataQuality.VALID))
         }
 
         historyByVital[VitalId.BONE_EXERCISE_MIN]?.apply {
-            add(TelemetryPoint(nowMs - 24 * 3600_000L, "1d ago", VitalId.BONE_EXERCISE_MIN, 85f, source = DataSource.MANUAL))
-            add(TelemetryPoint(nowMs - 90 * 60_000L, "1h 30m ago", VitalId.BONE_EXERCISE_MIN, 92f, source = DataSource.MANUAL))
+            add(TelemetryPoint(nowMs - 24 * 3600_000L, "1d ago", VitalId.BONE_EXERCISE_MIN, 85f, source = DataSource.MANUAL, qualityStatus = DataQuality.VALID))
+            add(TelemetryPoint(nowMs - 90 * 60_000L, "1h 30m ago", VitalId.BONE_EXERCISE_MIN, 92f, source = DataSource.MANUAL, qualityStatus = DataQuality.VALID))
         }
     }
 
@@ -196,9 +209,9 @@ class MissionSimulator {
         val isRadSurge = currentScenario == SimulationScenario.SOLAR_RADIATION_EVENT
 
         if (isSensorDrop) {
-            updates[VitalId.HEART_RATE] = TelemetryPoint(nowMs, "12s ago", VitalId.HEART_RATE, null, isDisconnected = true)
-            updates[VitalId.RADIATION_MSV] = TelemetryPoint(nowMs, "FAILED", VitalId.RADIATION_MSV, null, isDisconnected = true)
-            updates[VitalId.RESPIRATORY_RATE] = TelemetryPoint(nowMs, "12s ago", VitalId.RESPIRATORY_RATE, null, isDisconnected = true)
+            updates[VitalId.HEART_RATE] = TelemetryPoint(nowMs, "12s ago", VitalId.HEART_RATE, null, isDisconnected = true, qualityStatus = DataQuality.INCOMPLETE)
+            updates[VitalId.RADIATION_MSV] = TelemetryPoint(nowMs, "FAILED", VitalId.RADIATION_MSV, null, isDisconnected = true, qualityStatus = DataQuality.INCOMPLETE)
+            updates[VitalId.RESPIRATORY_RATE] = TelemetryPoint(nowMs, "12s ago", VitalId.RESPIRATORY_RATE, null, isDisconnected = true, qualityStatus = DataQuality.INCOMPLETE)
         } else {
             val hr = if (isCardioSpike) (104f + n * 4f) else if (isRadSurge) (86f + n * 3f) else (74f + n * 3f)
             val spo2 = if (isCardioSpike) 94f else (98f + n).coerceIn(96f, 100f)
@@ -206,18 +219,28 @@ class MissionSimulator {
             val rad = if (isRadSurge) (5.35f + abs(n) * 0.4f) else (0.68f + abs(n) * 0.14f)
 
             updates[VitalId.HEART_RATE] = TelemetryPoint(
-                nowMs, "12s ago", VitalId.HEART_RATE, hr,
-                anomalyRule = if (isCardioSpike) "Baseline Delta Rule 5.2" else null
+                timestampMs = nowMs,
+                timeLabel = "12s ago",
+                vitalId = VitalId.HEART_RATE,
+                value = hr,
+                anomalyRule = if (isCardioSpike) "Baseline Delta Rule 5.2" else null,
+                qualityStatus = DataQuality.VALID
             )
-            updates[VitalId.SPO2] = TelemetryPoint(nowMs, "12s ago", VitalId.SPO2, spo2)
-            updates[VitalId.RESPIRATORY_RATE] = TelemetryPoint(nowMs, "12s ago", VitalId.RESPIRATORY_RATE, resp)
-            updates[VitalId.RADIATION_MSV] = TelemetryPoint(nowMs, "12s ago", VitalId.RADIATION_MSV, rad)
+            updates[VitalId.SPO2] = TelemetryPoint(nowMs, "12s ago", VitalId.SPO2, spo2, qualityStatus = DataQuality.VALID)
+            updates[VitalId.RESPIRATORY_RATE] = TelemetryPoint(nowMs, "12s ago", VitalId.RESPIRATORY_RATE, resp, qualityStatus = DataQuality.VALID)
+            updates[VitalId.RADIATION_MSV] = TelemetryPoint(nowMs, "12s ago", VitalId.RADIATION_MSV, rad, qualityStatus = DataQuality.VALID)
         }
 
         if (isCardioSpike) {
             updates[VitalId.BLOOD_PRESSURE] = TelemetryPoint(
-                nowMs, "12s ago", VitalId.BLOOD_PRESSURE, 142f, 88f,
-                source = DataSource.ESTIMATED, isEstimated = true
+                timestampMs = nowMs,
+                timeLabel = "12s ago",
+                vitalId = VitalId.BLOOD_PRESSURE,
+                value = 142f,
+                secondaryValue = 88f,
+                source = DataSource.ESTIMATED,
+                isEstimated = true,
+                qualityStatus = DataQuality.UNVERIFIED
             )
         }
 
@@ -231,7 +254,13 @@ class MissionSimulator {
         return updates
     }
 
-    fun recordManualLog(vitalId: VitalId, value: Float, secondaryValue: Float? = null, note: String? = null) {
+    fun recordManualLog(
+        vitalId: VitalId,
+        value: Float,
+        secondaryValue: Float? = null,
+        note: String? = null,
+        qualityStatus: DataQuality = DataQuality.VALID
+    ) {
         val nowMs = System.currentTimeMillis()
         val pt = TelemetryPoint(
             timestampMs = nowMs,
@@ -240,7 +269,8 @@ class MissionSimulator {
             value = value,
             secondaryValue = secondaryValue,
             source = DataSource.MANUAL,
-            note = note
+            note = note,
+            qualityStatus = qualityStatus
         )
         val list = historyByVital[vitalId] ?: mutableListOf()
         list.add(pt)

@@ -3,18 +3,17 @@ package com.example.astrohealix.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -39,17 +38,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.astrohealix.data.AstroUiState
 import com.example.astrohealix.model.CatalogData
+import com.example.astrohealix.model.DataQuality
 import com.example.astrohealix.model.TelemetryPoint
+import com.example.astrohealix.model.VitalCategory
+import com.example.astrohealix.model.VitalDefinition
 import com.example.astrohealix.model.VitalId
+import com.example.astrohealix.model.VitalStatus
+import com.example.astrohealix.ui.components.StatusPill
 import com.example.astrohealix.ui.components.TrendChart
-import com.example.astrohealix.ui.theme.BgApp
+import com.example.astrohealix.ui.theme.BgPrimary
 import com.example.astrohealix.ui.theme.BgSurface
+import com.example.astrohealix.ui.theme.BgSurfaceHover
 import com.example.astrohealix.ui.theme.BorderActive
 import com.example.astrohealix.ui.theme.BorderSubtle
-import com.example.astrohealix.ui.theme.GlassCardBorderBrush
-import com.example.astrohealix.ui.theme.GlassCardFillBrush
+import com.example.astrohealix.ui.theme.CriticalSurfaceGlow
+import com.example.astrohealix.ui.theme.StatusCritical
 import com.example.astrohealix.ui.theme.StatusMonitor
+import com.example.astrohealix.ui.theme.StatusMonitorBg
 import com.example.astrohealix.ui.theme.StatusNormal
+import com.example.astrohealix.ui.theme.StatusNormalBg
+import com.example.astrohealix.ui.theme.TextDisabled
 import com.example.astrohealix.ui.theme.TextPrimary
 import com.example.astrohealix.ui.theme.TextSecondary
 
@@ -60,314 +68,450 @@ fun TrendsScreen(
     getHistory: (VitalId) -> List<TelemetryPoint>,
     modifier: Modifier = Modifier
 ) {
-    var selectedVitalId by remember { mutableStateOf(initialVitalId) }
+    var selectedVitalId by remember(initialVitalId) { mutableStateOf(initialVitalId) }
+    var selectedCategory by remember(initialVitalId) { mutableStateOf<VitalCategory?>(null) }
     var selectedTimeframeIndex by remember { mutableIntStateOf(0) }
-    val timeframes = listOf("24 Hours", "7 Days", "30 Days")
+    val timeframes = listOf("24h" to 24L, "7d" to 7L * 24L, "30d" to 30L * 24L)
 
-    val vitalDef = CatalogData.VITAL_DEFINITIONS[selectedVitalId] ?: return
-    val rawPoints = getHistory(selectedVitalId)
+    val baseDef = CatalogData.VITAL_DEFINITIONS[selectedVitalId] ?: return
+    val effectiveBaseline = state.baselines[selectedVitalId] ?: baseDef.baseline
+    val vitalDef: VitalDefinition = baseDef.copy(baseline = effectiveBaseline)
+    val snapshot = state.vitals.find { it.id == selectedVitalId }
 
-    val validValues = rawPoints.mapNotNull { it.value }
-    val avg = if (validValues.isNotEmpty()) validValues.average().toFloat() else null
+    val allHistory = getHistory(selectedVitalId)
+    val hoursWindow = timeframes[selectedTimeframeIndex].second
+    val anchorTs = allHistory.maxOfOrNull { it.timestampMs } ?: System.currentTimeMillis()
+    val cutoffMs = anchorTs - hoursWindow * 3600_000L
+    val rawPoints = allHistory.filter { it.timestampMs >= cutoffMs }.ifEmpty { allHistory }
+
+    val validPoints = rawPoints.filter {
+        !it.isDisconnected &&
+            it.value != null &&
+            it.qualityStatus != DataQuality.INVALID &&
+            it.qualityStatus != DataQuality.INCOMPLETE
+    }
+    val validValues = validPoints.mapNotNull { it.value }
+    val avgVal = if (validValues.isNotEmpty()) validValues.average().toFloat() else null
     val minVal = validValues.minOrNull()
     val maxVal = validValues.maxOrNull()
-    val maxPoint = rawPoints.find { it.value == maxVal }
-    val inRangeCount = validValues.count { it in vitalDef.baseline.nominalMin..vitalDef.baseline.nominalMax }
-    val inRangePct = if (validValues.isNotEmpty()) ((inRangeCount.toFloat() / validValues.size) * 100).toInt() else 100
-    val sensorIntegrity = if (rawPoints.isNotEmpty()) {
-        ((validValues.size.toFloat() / rawPoints.size) * 100).toInt()
-    } else 100
+    val inRangeCount = validValues.count { it in effectiveBaseline.nominalMin..effectiveBaseline.nominalMax }
+    val inRangePct = if (validValues.isNotEmpty()) ((inRangeCount.toFloat() / validValues.size) * 100f).toInt() else null
+    val integrityPct = if (rawPoints.isNotEmpty()) ((validPoints.size.toFloat() / rawPoints.size) * 100f).toInt() else null
+
+    val incompleteCount = rawPoints.count { it.isDisconnected || it.value == null || it.qualityStatus == DataQuality.INCOMPLETE }
+    val unverifiedCount = rawPoints.count { it.qualityStatus == DataQuality.UNVERIFIED || it.isEstimated }
+    val outdatedCount = rawPoints.count { it.qualityStatus == DataQuality.OUTDATED }
+    val invalidCount = rawPoints.count { it.qualityStatus == DataQuality.INVALID }
+
+    fun fmt(v: Float?): String {
+        if (v == null) return "---"
+        return if (vitalDef.precision > 0) "%.${vitalDef.precision}f".format(v) else v.toInt().toString()
+    }
+
+    val visibleVitals = selectedCategory?.vitalIds ?: VitalId.entries
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(BgApp)
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+            .background(BgPrimary)
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // 1. Title Bar & Controls
+        // Header + Timeframe Row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
-                    text = "${vitalDef.title.uppercase()} TELEMETRY DETAILED ANALYTICS",
+                    text = "TELEMETRY TRENDS",
                     color = TextPrimary,
-                    fontSize = 12.sp,
+                    fontSize = 22.sp,
                     fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = (-0.02).sp
                 )
-
                 Text(
-                    text = "• NASA HRP FLIGHT SURGEON SPEC",
+                    text = "${vitalDef.title.uppercase()} • ${rawPoints.size} SAMPLES",
                     color = TextSecondary,
-                    fontSize = 10.sp,
-                    fontFamily = FontFamily.Monospace
+                    fontSize = 11.sp,
+                    fontFamily = FontFamily.Monospace,
+                    letterSpacing = 0.05.sp
                 )
             }
 
-            // Timeframe selector (Apple Frosted Glass)
-            Row(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0x10FFFFFF))
-                    .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(8.dp))
-            ) {
-                timeframes.forEachIndexed { index, title ->
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                timeframes.forEachIndexed { index, (label, _) ->
                     val isSelected = selectedTimeframeIndex == index
                     Box(
                         modifier = Modifier
+                            .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (isSelected) Color(0x35FFFFFF) else Color.Transparent)
+                            .background(if (isSelected) BgSurfaceHover else BgSurface)
+                            .border(
+                                width = if (isSelected) 1.5.dp else 1.dp,
+                                color = if (isSelected) BorderActive else BorderSubtle,
+                                shape = RoundedCornerShape(8.dp)
+                            )
                             .clickable { selectedTimeframeIndex = index }
-                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                            .padding(horizontal = 12.dp),
+                        contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = title,
-                            color = if (isSelected) TextPrimary else TextSecondary,
-                            fontSize = 10.sp,
+                            text = label,
+                            color = if (isSelected) BorderActive else TextSecondary,
+                            fontSize = 12.sp,
                             fontFamily = FontFamily.Monospace,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                         )
                     }
                 }
             }
         }
 
-        // 2. Vital Indicator Selector Chips (Arranged in 2 balanced rows of 4 chips)
-        val chipsRow1 = listOf(
-            VitalId.HEART_RATE,
-            VitalId.SPO2,
-            VitalId.BLOOD_PRESSURE,
-            VitalId.RESPIRATORY_RATE
-        )
-        val chipsRow2 = listOf(
-            VitalId.RADIATION_MSV,
-            VitalId.SLEEP_HOURS,
-            VitalId.HYDRATION_ML,
-            VitalId.BLOOD_GLUCOSE
-        )
-
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                chipsRow1.forEach { vId ->
-                    val isSelected = vId == selectedVitalId
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (isSelected) Color(0x30FFFFFF) else Color(0x0EFFFFFF))
-                            .border(1.dp, if (isSelected) Color(0x60FFFFFF) else Color(0x18FFFFFF), RoundedCornerShape(8.dp))
-                            .clickable { selectedVitalId = vId }
-                            .padding(vertical = 5.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = vId.shortLabel,
-                            color = if (isSelected) TextPrimary else TextSecondary,
-                            fontSize = 10.sp,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            maxLines = 1,
-                            softWrap = false
-                        )
+        // Category Selector Chips (>= 48dp touch height)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            CategoryChip(
+                label = "All Categories",
+                isSelected = selectedCategory == null,
+                onClick = { selectedCategory = null }
+            )
+            VitalCategory.entries.forEach { category ->
+                CategoryChip(
+                    label = category.title,
+                    isSelected = selectedCategory == category,
+                    onClick = {
+                        selectedCategory = category
+                        if (selectedVitalId !in category.vitalIds) {
+                            selectedVitalId = category.vitalIds.first()
+                        }
                     }
-                }
+                )
             }
+        }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                chipsRow2.forEach { vId ->
-                    val isSelected = vId == selectedVitalId
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (isSelected) Color(0x30FFFFFF) else Color(0x0EFFFFFF))
-                            .border(1.dp, if (isSelected) Color(0x60FFFFFF) else Color(0x18FFFFFF), RoundedCornerShape(8.dp))
-                            .clickable { selectedVitalId = vId }
-                            .padding(vertical = 5.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = vId.shortLabel,
-                            color = if (isSelected) TextPrimary else TextSecondary,
-                            fontSize = 10.sp,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            maxLines = 1,
-                            softWrap = false
+        // Vital Selector Chips (>= 48dp touch height)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            visibleVitals.forEach { vId ->
+                val isSelected = vId == selectedVitalId
+                Box(
+                    modifier = Modifier
+                        .defaultMinSize(minHeight = 48.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (isSelected) BgSurfaceHover else BgSurface)
+                        .border(
+                            width = if (isSelected) 1.5.dp else 1.dp,
+                            color = if (isSelected) BorderActive else BorderSubtle,
+                            shape = RoundedCornerShape(8.dp)
                         )
-                    }
+                        .clickable { selectedVitalId = vId }
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = vId.shortLabel,
+                        color = if (isSelected) BorderActive else TextSecondary,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        maxLines = 1,
+                        softWrap = false
+                    )
                 }
             }
         }
 
-        // 3. Two-Tier Analytics Layout (Fills Entire Height!)
+        // Trend Chart Container
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(260.dp)
+        ) {
+            TrendChart(
+                vital = vitalDef,
+                points = rawPoints,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        // 24h Min / Avg / Max Summary Card
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(BgSurface)
+                .border(1.dp, BorderSubtle, RoundedCornerShape(8.dp))
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Upper Tier: Custom Canvas TrendChart (58% height)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1.3f)
+            Text(
+                text = "${timeframes[selectedTimeframeIndex].first.uppercase()} TELEMETRY SUMMARY",
+                color = TextSecondary,
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.05.sp
+            )
+
+            // Min / Avg / Max 3-Column Metrics
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                TrendChart(
-                    vital = vitalDef,
-                    points = rawPoints,
-                    modifier = Modifier.fillMaxSize()
+                SummaryMetricTile(
+                    label = "MIN",
+                    value = fmt(minVal),
+                    unit = vitalDef.unit,
+                    modifier = Modifier.weight(1f)
+                )
+                SummaryMetricTile(
+                    label = "AVG",
+                    value = fmt(avgVal),
+                    unit = vitalDef.unit,
+                    modifier = Modifier.weight(1f)
+                )
+                SummaryMetricTile(
+                    label = "MAX",
+                    value = fmt(maxVal),
+                    unit = vitalDef.unit,
+                    modifier = Modifier.weight(1f)
                 )
             }
 
-            // Lower Tier: Two Side-by-Side Detailed Panels (42% height)
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                TrendStatRow(
+                    label = "Personal Baseline Band",
+                    value = "${fmt(effectiveBaseline.nominalMin)}–${fmt(effectiveBaseline.nominalMax)} ${vitalDef.unit}",
+                    valueColor = StatusNormal
+                )
+                TrendStatRow(
+                    label = "Time in Nominal Baseline",
+                    value = inRangePct?.let { "$it% of valid samples" } ?: "---",
+                    valueColor = TextPrimary
+                )
+                TrendStatRow(
+                    label = "Sensor Packet Integrity",
+                    value = integrityPct?.let { "$it% valid (${validPoints.size}/${rawPoints.size})" } ?: "---",
+                    valueColor = if ((integrityPct ?: 100) < 90) StatusMonitor else StatusNormal
+                )
+            }
+        }
+
+        // Rule 5.2 & Quality Validation Status Note Card
+        val isCritical = snapshot?.status == VitalStatus.CRITICAL
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(if (isCritical) CriticalSurfaceGlow else BgSurface)
+                .border(1.dp, if (isCritical) StatusCritical else BorderSubtle, RoundedCornerShape(8.dp))
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(0.9f),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left Panel: Statistical Telemetry Breakdown (50% width)
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(GlassCardFillBrush)
-                        .border(1.dp, GlassCardBorderBrush, RoundedCornerShape(8.dp))
-                        .padding(12.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.SpaceBetween
+                    Icon(
+                        imageVector = if (isCritical) Icons.Default.Warning else Icons.Default.Info,
+                        contentDescription = null,
+                        tint = if (isCritical) StatusCritical else BorderActive,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "RULE & QUALITY VALIDATION",
+                        color = TextPrimary,
+                        fontSize = 12.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.05.sp
+                    )
+                }
+
+                if (snapshot != null) {
+                    StatusPill(status = snapshot.status, compact = true)
+                }
+            }
+
+            if (snapshot != null) {
+                val qualityColor = when (snapshot.qualityStatus) {
+                    DataQuality.VALID -> StatusNormal
+                    DataQuality.UNVERIFIED, DataQuality.OUTDATED -> StatusMonitor
+                    DataQuality.INCOMPLETE, DataQuality.INVALID -> StatusCritical
+                }
+                val qualityBg = when (snapshot.qualityStatus) {
+                    DataQuality.VALID -> StatusNormalBg
+                    DataQuality.UNVERIFIED, DataQuality.OUTDATED -> StatusMonitorBg
+                    else -> BgPrimary
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(qualityBg)
+                            .border(1.dp, qualityColor, RoundedCornerShape(4.dp))
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
                     ) {
                         Text(
-                            text = "24-HOUR STATISTICAL TELEMETRY DISTRIBUTION",
-                            color = TextPrimary,
-                            fontSize = 11.sp,
+                            text = "QUALITY: ${snapshot.qualityStatus.name}",
+                            color = qualityColor,
+                            fontSize = 10.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold
                         )
-
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            StatRow("Rolling 24h Average:", "${avg?.let { "%.1f".format(it) } ?: "73.0"} ${vitalDef.unit}")
-                            StatRow("Astronaut Baseline Band:", "${vitalDef.baseline.nominalMin.toInt()} – ${vitalDef.baseline.nominalMax.toInt()} ${vitalDef.unit}")
-                            StatRow("Min / Max Range Recorded:", "${minVal?.toInt() ?: 58} / ${maxVal?.toInt() ?: 94} ${vitalDef.unit} (Peak: ${maxPoint?.timeLabel ?: "07:14 UTC"})")
-                            StatRow("Time in Nominal Baseline:", "$inRangePct% of recording window", TextPrimary)
-                            StatRow("Sensor Packet Integrity:", "$sensorIntegrity% Valid Packets", TextPrimary)
-                        }
-
-                        Text(
-                            text = "Data validated via onboard Kalman filter. Gap region denotes telemetry blackout / LOS.",
-                            color = TextSecondary.copy(alpha = 0.6f),
-                            fontSize = 9.sp,
-                            fontFamily = FontFamily.SansSerif
-                        )
                     }
+
+                    Text(
+                        text = snapshot.ruleApplied ?: "Baseline Nominal Guard",
+                        color = BorderActive,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
 
-                // Right Panel: Baseline Delta Rule 5.2 & Anomaly Log (50% width)
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(GlassCardFillBrush)
-                        .border(1.dp, GlassCardBorderBrush, RoundedCornerShape(8.dp))
-                        .padding(12.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "ANOMALY EVALUATOR & CLINICAL DECISION RULE",
-                                color = TextPrimary,
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Icon(Icons.Default.Warning, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(14.dp))
-                        }
-
-                        // Anomaly event callout box (Apple Frosted Glass)
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color(0x14FFFFFF))
-                                .border(1.dp, Color(0x30FFFFFF), RoundedCornerShape(8.dp))
-                                .padding(8.dp)
-                        ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                                Text(
-                                    text = "SPIKE EVENT: 07:14 UTC -- ${vitalDef.title} reached ${maxVal?.toInt() ?: 94} ${vitalDef.unit}",
-                                    color = TextPrimary,
-                                    fontSize = 11.sp,
-                                    fontFamily = FontFamily.Monospace,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "Algorithm: Baseline Delta Rule 5.2 triggered (+16 bpm spike over upper baseline).",
-                                    color = TextSecondary,
-                                    fontSize = 10.sp,
-                                    fontFamily = FontFamily.Monospace
-                                )
-                                Text(
-                                    text = "Action: Crew acknowledged. Escalate to ground surgeon if orthostatic symptoms persist.",
-                                    color = TextSecondary,
-                                    fontSize = 10.sp,
-                                    fontFamily = FontFamily.SansSerif
-                                )
-                            }
-                        }
-
-                        // NASA Guideline footer
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(Icons.Default.Info, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(13.dp))
-                            Text(
-                                text = "NASA HRP Standard: Auto-escalates when 3 consecutive cycles drift outside tolerance.",
-                                color = TextSecondary,
-                                fontSize = 9.sp,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
-                    }
-                }
+                Text(
+                    text = snapshot.reason,
+                    color = TextPrimary,
+                    fontSize = 13.sp,
+                    lineHeight = 19.sp,
+                    fontFamily = FontFamily.SansSerif
+                )
             }
+
+            val ruleSummary = when (selectedVitalId) {
+                VitalId.HEART_RATE -> "Rule 5.2: Flags MONITOR at +15 BPM above personal upper baseline and CRITICAL at >= critical bound or +20 BPM rolling deviation."
+                VitalId.SLEEP_HOURS -> "3-Cycle Drift Rule: Escalates to CRITICAL after 3 consecutive sleep cycles below 6.0 hrs."
+                else -> "COLLECT -> VALIDATE -> STORE pipeline isolates disconnected gaps ($incompleteCount), estimated/unverified ($unverifiedCount), outdated ($outdatedCount), and invalid ($invalidCount) samples so missing data is never coerced to 0."
+            }
+
+            Text(
+                text = ruleSummary,
+                color = TextSecondary,
+                fontSize = 12.sp,
+                lineHeight = 17.sp,
+                fontFamily = FontFamily.SansSerif
+            )
         }
     }
 }
 
 @Composable
-private fun StatRow(label: String, value: String, valueColor: androidx.compose.ui.graphics.Color = TextPrimary) {
+private fun CategoryChip(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .defaultMinSize(minHeight = 48.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (isSelected) BgSurfaceHover else BgSurface)
+            .border(
+                width = if (isSelected) 1.5.dp else 1.dp,
+                color = if (isSelected) BorderActive else BorderSubtle,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            color = if (isSelected) BorderActive else TextSecondary,
+            fontSize = 12.sp,
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1,
+            softWrap = false
+        )
+    }
+}
+
+@Composable
+private fun SummaryMetricTile(
+    label: String,
+    value: String,
+    unit: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(BgPrimary)
+            .border(1.dp, BorderSubtle, RoundedCornerShape(8.dp))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = label,
+            color = TextSecondary,
+            fontSize = 10.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.05.sp
+        )
+        Text(
+            text = value,
+            color = if (value == "---") TextDisabled else TextPrimary,
+            fontSize = 20.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            softWrap = false
+        )
+        Text(
+            text = unit,
+            color = TextSecondary,
+            fontSize = 10.sp,
+            fontFamily = FontFamily.Monospace
+        )
+    }
+}
+
+@Composable
+private fun TrendStatRow(label: String, value: String, valueColor: Color) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = label, color = TextSecondary, fontSize = 10.sp, fontFamily = FontFamily.SansSerif)
-        Text(text = value, color = valueColor, fontSize = 10.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+        Text(
+            text = label,
+            color = TextSecondary,
+            fontSize = 13.sp,
+            fontFamily = FontFamily.SansSerif
+        )
+        Text(
+            text = value,
+            color = valueColor,
+            fontSize = 12.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
