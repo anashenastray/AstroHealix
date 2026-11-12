@@ -1,15 +1,15 @@
 package com.example.astrohealix.evaluator
 
-import com.example.astrohealix.model.CatalogData
+import com.example.astrohealix.model.DataQuality
 import com.example.astrohealix.model.DataSource
 import com.example.astrohealix.model.HazardId
 import com.example.astrohealix.model.MissionEnvironment
 import com.example.astrohealix.model.NON_DIAGNOSTIC_DISCLAIMER
+import com.example.astrohealix.model.PersonalBaseline
 import com.example.astrohealix.model.TelemetryPoint
 import com.example.astrohealix.model.VitalId
 import com.example.astrohealix.model.VitalStatus
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -32,6 +32,7 @@ class VitalEvaluatorTest {
         assertEquals(VitalStatus.UNAVAILABLE, result.status)
         assertEquals("DATA UNAVAILABLE", result.displayValue)
         assertEquals("Sensor Disconnected", result.deltaFromBaseline)
+        assertEquals(DataQuality.INCOMPLETE, result.qualityStatus)
         assertNull(result.deltaPercent)
     }
 
@@ -117,5 +118,181 @@ class VitalEvaluatorTest {
 
         assertTrue("Transit distance hazard ($transitDist) should exceed LEO ($leoDist)", transitDist > leoDist)
         assertTrue(NON_DIAGNOSTIC_DISCLAIMER.contains("does not replace"))
+    }
+
+    @Test
+    fun validateTelemetry_classifiesIncompleteInvalidOutdatedUnverifiedAndValid() {
+        val nowMs = 1_750_000_000_000L
+
+        // INCOMPLETE: null value or disconnected
+        assertEquals(
+            DataQuality.INCOMPLETE,
+            VitalEvaluator.validateTelemetry(
+                vitalId = VitalId.HEART_RATE,
+                value = null,
+                secondaryValue = null,
+                timestampMs = nowMs,
+                nowMs = nowMs,
+                isDisconnected = false,
+                isEstimated = false
+            )
+        )
+        assertEquals(
+            DataQuality.INCOMPLETE,
+            VitalEvaluator.validateTelemetry(
+                vitalId = VitalId.SPO2,
+                value = 98f,
+                secondaryValue = null,
+                timestampMs = nowMs,
+                nowMs = nowMs,
+                isDisconnected = true,
+                isEstimated = false
+            )
+        )
+
+        // INVALID: out of physiological bounds or NaN secondary
+        assertEquals(
+            DataQuality.INVALID,
+            VitalEvaluator.validateTelemetry(
+                vitalId = VitalId.HEART_RATE,
+                value = 310f,
+                secondaryValue = null,
+                timestampMs = nowMs,
+                nowMs = nowMs,
+                isDisconnected = false,
+                isEstimated = false
+            )
+        )
+        assertEquals(
+            DataQuality.INVALID,
+            VitalEvaluator.validateTelemetry(
+                vitalId = VitalId.BLOOD_PRESSURE,
+                value = 120f,
+                secondaryValue = 210f,
+                timestampMs = nowMs,
+                nowMs = nowMs,
+                isDisconnected = false,
+                isEstimated = false
+            )
+        )
+
+        // OUTDATED: > 6h for SENSOR, > 36h for MANUAL
+        assertEquals(
+            DataQuality.OUTDATED,
+            VitalEvaluator.validateTelemetry(
+                vitalId = VitalId.HEART_RATE,
+                value = 72f,
+                secondaryValue = null,
+                timestampMs = nowMs - (7L * 3600_000L),
+                nowMs = nowMs,
+                isDisconnected = false,
+                isEstimated = false
+            )
+        )
+        assertEquals(
+            DataQuality.OUTDATED,
+            VitalEvaluator.validateTelemetry(
+                vitalId = VitalId.BLOOD_PRESSURE,
+                value = 118f,
+                secondaryValue = 76f,
+                timestampMs = nowMs - (37L * 3600_000L),
+                nowMs = nowMs,
+                isDisconnected = false,
+                isEstimated = false
+            )
+        )
+
+        // UNVERIFIED: estimated or rapid jump
+        assertEquals(
+            DataQuality.UNVERIFIED,
+            VitalEvaluator.validateTelemetry(
+                vitalId = VitalId.SPO2,
+                value = 98f,
+                secondaryValue = null,
+                timestampMs = nowMs,
+                nowMs = nowMs,
+                isDisconnected = false,
+                isEstimated = true
+            )
+        )
+        val priorHistory = listOf(
+            TelemetryPoint(
+                timestampMs = nowMs - 60_000L,
+                timeLabel = "1m ago",
+                vitalId = VitalId.HEART_RATE,
+                value = 70f,
+                source = DataSource.SENSOR,
+                qualityStatus = DataQuality.VALID
+            )
+        )
+        assertEquals(
+            DataQuality.UNVERIFIED,
+            VitalEvaluator.validateTelemetry(
+                vitalId = VitalId.HEART_RATE,
+                value = 140f,
+                secondaryValue = null,
+                timestampMs = nowMs,
+                nowMs = nowMs,
+                isDisconnected = false,
+                isEstimated = false,
+                existingHistory = priorHistory
+            )
+        )
+
+        // VALID: within bounds, fresh, non-estimated, smooth transition
+        assertEquals(
+            DataQuality.VALID,
+            VitalEvaluator.validateTelemetry(
+                vitalId = VitalId.HEART_RATE,
+                value = 74f,
+                secondaryValue = null,
+                timestampMs = nowMs,
+                nowMs = nowMs,
+                isDisconnected = false,
+                isEstimated = false,
+                existingHistory = priorHistory
+            )
+        )
+    }
+
+    @Test
+    fun evaluate_isolatesInvalidReadingAsUnavailable_andAppliesCustomBaselines() {
+        val nowMs = System.currentTimeMillis()
+        val invalidPoint = TelemetryPoint(
+            timestampMs = nowMs,
+            timeLabel = "Now",
+            vitalId = VitalId.HEART_RATE,
+            value = 999f,
+            source = DataSource.MANUAL
+        )
+        val invalidEval = VitalEvaluator.evaluate(VitalId.HEART_RATE, invalidPoint)
+        assertEquals(VitalStatus.UNAVAILABLE, invalidEval.status)
+        assertEquals("DATA UNAVAILABLE", invalidEval.displayValue)
+        assertEquals(DataQuality.INVALID, invalidEval.qualityStatus)
+
+        val validPoint = TelemetryPoint(
+            timestampMs = nowMs,
+            timeLabel = "Now",
+            vitalId = VitalId.HEART_RATE,
+            value = 74f,
+            source = DataSource.SENSOR
+        )
+        val tightCustomBaseline = mapOf(
+            VitalId.HEART_RATE to PersonalBaseline(
+                nominalMin = 50f,
+                nominalMax = 62f,
+                monitorLow = 45f,
+                monitorHigh = 68f,
+                criticalLow = 40f,
+                criticalHigh = 72f
+            )
+        )
+        val customEval = VitalEvaluator.evaluate(
+            vitalId = VitalId.HEART_RATE,
+            point = validPoint,
+            customBaselines = tightCustomBaseline
+        )
+        assertEquals(VitalStatus.CRITICAL, customEval.status)
+        assertEquals("74", customEval.displayValue)
     }
 }
