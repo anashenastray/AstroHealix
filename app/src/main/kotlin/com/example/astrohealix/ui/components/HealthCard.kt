@@ -40,7 +40,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
@@ -100,21 +102,18 @@ fun HealthCard(
             .alpha(if (isUnavailable) 0.6f else 1f)
             .clip(cardShape)
             .background(BgSurface, cardShape)
+            .drawBehind {
+                drawRect(
+                    color = statusColor,
+                    size = Size(4.dp.toPx(), size.height)
+                )
+            }
             .border(1.dp, BorderSubtle, cardShape)
             .clickable(
                 interactionSource = interactionSource,
                 indication = LocalIndication.current
             ) { onTapCard(snapshot.id) }
     ) {
-        // 4px solid status color left border accent
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .width(4.dp)
-                .matchParentSize()
-                .background(statusColor)
-        )
-
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
