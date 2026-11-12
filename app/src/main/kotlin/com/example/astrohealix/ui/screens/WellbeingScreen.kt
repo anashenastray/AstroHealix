@@ -274,7 +274,7 @@ fun WellbeingScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                if (checkInSavedMessage != null) {
+                checkInSavedMessage?.let { savedMsg ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -286,7 +286,7 @@ fun WellbeingScreen(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = checkInSavedMessage!!,
+                            text = savedMsg,
                             color = StatusNormal,
                             fontSize = 12.sp,
                             fontFamily = FontFamily.Monospace
@@ -470,9 +470,9 @@ fun WellbeingScreen(
                             fontFamily = FontFamily.Monospace
                         )
                     }
-                    if (!entry.notes.isNullOrBlank()) {
+                    entry.notes?.takeIf { it.isNotBlank() }?.let { noteText ->
                         Text(
-                            text = entry.notes!!,
+                            text = noteText,
                             color = TextSecondary,
                             fontSize = 13.sp
                         )

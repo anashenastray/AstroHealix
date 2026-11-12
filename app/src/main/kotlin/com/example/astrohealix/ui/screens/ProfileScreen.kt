@@ -210,9 +210,9 @@ fun ProfileScreen(
                         }
                     )
 
-                    if (profileFeedback != null) {
+                    profileFeedback?.let { feedbackMsg ->
                         Text(
-                            text = profileFeedback!!,
+                            text = feedbackMsg,
                             color = StatusNormal,
                             fontSize = 12.sp,
                             fontFamily = FontFamily.Monospace
@@ -476,17 +476,17 @@ fun ProfileScreen(
                         }
                     )
 
-                    if (baselineError != null) {
+                    baselineError?.let { errorMsg ->
                         Text(
-                            text = baselineError!!,
+                            text = errorMsg,
                             color = StatusCritical,
                             fontSize = 12.sp
                         )
                     }
 
-                    if (baselineFeedback != null) {
+                    baselineFeedback?.let { feedbackMsg ->
                         Text(
-                            text = baselineFeedback!!,
+                            text = feedbackMsg,
                             color = StatusNormal,
                             fontSize = 12.sp,
                             fontFamily = FontFamily.Monospace

@@ -1,5 +1,8 @@
 package com.example.astrohealix.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -36,9 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -66,7 +67,6 @@ fun ReportsScreen(
     onBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
 
     val periodOptions = remember {
@@ -185,7 +185,8 @@ fun ReportsScreen(
                         onClick = {
                             val csv = onExportCsv()
                             exportedCsvPreview = csv
-                            clipboardManager.setText(AnnotatedString(csv))
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                            clipboard?.setPrimaryClip(ClipData.newPlainText("AstroHealix Telemetry CSV", csv))
                             Toast.makeText(
                                 context,
                                 "CSV exported & copied to clipboard",
@@ -432,7 +433,7 @@ fun ReportsScreen(
             }
 
             // Exported CSV Preview (shown after pressing Export CSV)
-            if (exportedCsvPreview != null) {
+            exportedCsvPreview?.let { csvText ->
                 item(key = "csv-preview") {
                     Column(
                         modifier = Modifier
@@ -449,7 +450,7 @@ fun ReportsScreen(
                             color = BorderActive
                         )
                         Text(
-                            text = exportedCsvPreview!!,
+                            text = csvText,
                             color = TextSecondary,
                             fontSize = 11.sp,
                             fontFamily = FontFamily.Monospace,
