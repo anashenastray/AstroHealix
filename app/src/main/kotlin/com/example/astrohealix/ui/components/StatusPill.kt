@@ -17,16 +17,24 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.example.astrohealix.model.VitalStatus
-import com.example.astrohealix.ui.theme.TextPrimary
-import com.example.astrohealix.ui.theme.TextSecondary
-import com.example.astrohealix.ui.theme.TextTertiary
+import com.example.astrohealix.ui.theme.StatusCritical
+import com.example.astrohealix.ui.theme.StatusCriticalBg
+import com.example.astrohealix.ui.theme.StatusMonitor
+import com.example.astrohealix.ui.theme.StatusMonitorBg
+import com.example.astrohealix.ui.theme.StatusNormal
+import com.example.astrohealix.ui.theme.StatusNormalBg
+import com.example.astrohealix.ui.theme.StatusUnavailable
+import com.example.astrohealix.ui.theme.StatusUnavailableBg
 
 @Composable
 fun StatusPill(
@@ -35,78 +43,73 @@ fun StatusPill(
     compact: Boolean = false,
     customLabel: String? = null
 ) {
-    val fullLabel = when (status) {
+    val defaultLabel = when (status) {
         VitalStatus.NORMAL -> "NORMAL"
         VitalStatus.MONITOR -> "MONITOR"
-        VitalStatus.CRITICAL -> "CRITICAL"
-        VitalStatus.UNAVAILABLE -> "NO DATA"
+        VitalStatus.CRITICAL -> "ATTENTION REQUIRED"
+        VitalStatus.UNAVAILABLE -> "DATA UNAVAILABLE"
     }
 
-    val compactLabel = when (status) {
-        VitalStatus.NORMAL -> "NORM"
-        VitalStatus.MONITOR -> "MONITOR"
-        VitalStatus.CRITICAL -> "CRIT"
-        VitalStatus.UNAVAILABLE -> "N/A"
-    }
-
-    // Apple Frosted Glass Monochrome Styling (Zero neon color noise)
-    val (fgColor, bgColor, borderColor, icon: ImageVector) = when (status) {
-        VitalStatus.NORMAL -> Quad(
-            TextPrimary,
-            Color(0x14FFFFFF),
-            Color(0x28FFFFFF),
-            Icons.Default.CheckCircle
+    val style = when (status) {
+        VitalStatus.NORMAL -> StatusPillStyle(
+            fgColor = StatusNormal,
+            bgColor = StatusNormalBg,
+            icon = Icons.Default.CheckCircle
         )
-        VitalStatus.MONITOR -> Quad(
-            TextPrimary,
-            Color(0x22FFFFFF),
-            Color(0x40FFFFFF),
-            Icons.Default.WarningAmber
+        VitalStatus.MONITOR -> StatusPillStyle(
+            fgColor = StatusMonitor,
+            bgColor = StatusMonitorBg,
+            icon = Icons.Default.WarningAmber
         )
-        VitalStatus.CRITICAL -> Quad(
-            TextPrimary,
-            Color(0x35FFFFFF),
-            Color(0x70FFFFFF),
-            Icons.Default.Warning
+        VitalStatus.CRITICAL -> StatusPillStyle(
+            fgColor = StatusCritical,
+            bgColor = StatusCriticalBg,
+            icon = Icons.Default.Warning
         )
-        VitalStatus.UNAVAILABLE -> Quad(
-            TextTertiary,
-            Color(0x0CFFFFFF),
-            Color(0x18FFFFFF),
-            Icons.Default.Close
+        VitalStatus.UNAVAILABLE -> StatusPillStyle(
+            fgColor = StatusUnavailable,
+            bgColor = StatusUnavailableBg,
+            icon = Icons.Default.Close
         )
     }
 
-    val displayLabel = customLabel ?: if (compact) compactLabel else fullLabel
+    val displayLabel = (customLabel ?: defaultLabel).uppercase()
+    val pillShape = RoundedCornerShape(50)
 
     Row(
         modifier = modifier
-            .background(bgColor, RoundedCornerShape(12.dp))
-            .border(1.dp, borderColor, RoundedCornerShape(12.dp))
+            .clip(pillShape)
+            .background(style.bgColor, pillShape)
+            .border(1.dp, style.fgColor, pillShape)
             .padding(
-                horizontal = if (compact) 6.dp else 8.dp,
-                vertical = if (compact) 2.dp else 3.dp
+                horizontal = if (compact) 7.dp else 10.dp,
+                vertical = if (compact) 2.dp else 4.dp
             ),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 4.dp)
+        horizontalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 5.dp)
     ) {
         Icon(
-            imageVector = icon,
+            imageVector = style.icon,
             contentDescription = displayLabel,
-            tint = fgColor,
-            modifier = Modifier.size(if (compact) 9.dp else 11.dp)
+            tint = style.fgColor,
+            modifier = Modifier.size(if (compact) 10.dp else 12.dp)
         )
         Text(
             text = displayLabel,
-            color = fgColor,
-            fontSize = if (compact) 9.sp else 10.sp,
+            color = style.fgColor,
+            fontSize = if (compact) 9.5.sp else 11.sp,
             fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Bold,
+            letterSpacing = if (compact) 0.03.em else 0.05.em,
             maxLines = 1,
             softWrap = false,
-            letterSpacing = 0.03.sp
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
 
-private data class Quad<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
+private data class StatusPillStyle(
+    val fgColor: Color,
+    val bgColor: Color,
+    val icon: ImageVector
+)

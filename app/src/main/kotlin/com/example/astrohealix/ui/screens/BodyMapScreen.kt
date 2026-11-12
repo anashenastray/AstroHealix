@@ -1,11 +1,14 @@
 package com.example.astrohealix.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -23,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
@@ -35,7 +39,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -45,17 +48,20 @@ import com.example.astrohealix.model.BodyZoneId
 import com.example.astrohealix.model.HazardScore
 import com.example.astrohealix.model.VitalCardSnapshot
 import com.example.astrohealix.model.VitalId
+import com.example.astrohealix.model.VitalStatus
 import com.example.astrohealix.ui.components.BodyMapHUD
 import com.example.astrohealix.ui.components.StatusPill
-import com.example.astrohealix.ui.theme.BgApp
+import com.example.astrohealix.ui.theme.BgPrimary
 import com.example.astrohealix.ui.theme.BgSurface
+import com.example.astrohealix.ui.theme.BgSurfaceHover
 import com.example.astrohealix.ui.theme.BorderActive
 import com.example.astrohealix.ui.theme.BorderSubtle
-import com.example.astrohealix.ui.theme.GlassCardBorderBrush
-import com.example.astrohealix.ui.theme.GlassCardFillBrush
+import com.example.astrohealix.ui.theme.CriticalSurfaceGlow
 import com.example.astrohealix.ui.theme.StatusCritical
 import com.example.astrohealix.ui.theme.StatusMonitor
 import com.example.astrohealix.ui.theme.StatusNormal
+import com.example.astrohealix.ui.theme.StatusUnavailable
+import com.example.astrohealix.ui.theme.TextDisabled
 import com.example.astrohealix.ui.theme.TextPrimary
 import com.example.astrohealix.ui.theme.TextSecondary
 
@@ -69,157 +75,160 @@ fun BodyMapScreen(
     var selectedZone by remember { mutableStateOf(BodyZoneId.CARDIOVASCULAR) }
     val zoneVitals = state.vitals.filter { it.bodyZone == selectedZone }
 
-    Column(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
-            .background(BgApp)
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+            .background(BgPrimary)
+            .padding(16.dp)
     ) {
-        // Title Row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "ASTRONAUT ANATOMICAL HUD & 5 NASA HRP HAZARDS",
-                color = TextPrimary,
-                fontSize = 12.sp,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold
-            )
+        val isWide = maxWidth >= 720.dp
 
-            Text(
-                text = "INTERACTIVE CLINICAL DECISION SUPPORT",
-                color = TextSecondary,
-                fontSize = 10.sp,
-                fontFamily = FontFamily.Monospace
-            )
-        }
+        if (isWide) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                BodyMapHeader()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .weight(0.95f)
+                            .fillMaxHeight(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        BodyMapHUD(
+                            vitals = state.vitals,
+                            selectedZone = selectedZone,
+                            onSelectZone = { selectedZone = it },
+                            heightDp = 360
+                        )
+                        ZoneSelectorGrid(
+                            selectedZone = selectedZone,
+                            onSelectZone = { selectedZone = it }
+                        )
+                    }
 
-        // Two-Column Split Layout for Tablet
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // --- LEFT COLUMN: ANATOMICAL FIGURE (45% width) ---
+                    Column(
+                        modifier = Modifier
+                            .weight(1.05f)
+                            .fillMaxHeight()
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        ZoneDetailCard(
+                            zone = selectedZone,
+                            zoneVitals = zoneVitals,
+                            onOpenGuide = onOpenExamGuide,
+                            onLogMetric = onLogMetric
+                        )
+                        HazardsMatrixSection(hazards = state.hazards)
+                    }
+                }
+            }
+        } else {
             Column(
                 modifier = Modifier
-                    .weight(0.95f)
-                    .fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                BodyMapHeader()
                 BodyMapHUD(
                     vitals = state.vitals,
                     selectedZone = selectedZone,
                     onSelectZone = { selectedZone = it },
-                    heightDp = 390
+                    heightDp = 280
                 )
-
-                // Quick selector buttons arranged in 2 rows of 3 buttons (Clean & No text wrapping!)
-                val row1Zones = listOf(
-                    BodyZoneId.HEAD_NEURO to "NEURO / SLEEP",
-                    BodyZoneId.RESPIRATORY to "RESPIRATORY",
-                    BodyZoneId.CARDIOVASCULAR to "CARDIO"
+                ZoneSelectorGrid(
+                    selectedZone = selectedZone,
+                    onSelectZone = { selectedZone = it }
                 )
-                val row2Zones = listOf(
-                    BodyZoneId.METABOLIC_RENAL to "METABOLIC",
-                    BodyZoneId.MUSCULOSKELETAL to "MUSCULOSKELETAL",
-                    BodyZoneId.IMMUNE_RADIATION to "IMMUNE / RAD"
-                )
-
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        row1Zones.forEach { (zone, label) ->
-                            val isSelected = zone == selectedZone
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(if (isSelected) Color(0x30FFFFFF) else Color(0x0EFFFFFF))
-                                    .border(1.dp, if (isSelected) Color(0x70FFFFFF) else Color(0x18FFFFFF), RoundedCornerShape(8.dp))
-                                    .clickable { selectedZone = zone }
-                                    .padding(vertical = 7.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = label,
-                                    color = if (isSelected) TextPrimary else TextSecondary,
-                                    fontSize = 10.sp,
-                                    fontFamily = FontFamily.Monospace,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    maxLines = 1,
-                                    softWrap = false
-                                )
-                            }
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        row2Zones.forEach { (zone, label) ->
-                            val isSelected = zone == selectedZone
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(if (isSelected) Color(0x30FFFFFF) else Color(0x0EFFFFFF))
-                                    .border(1.dp, if (isSelected) Color(0x70FFFFFF) else Color(0x18FFFFFF), RoundedCornerShape(8.dp))
-                                    .clickable { selectedZone = zone }
-                                    .padding(vertical = 7.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = label,
-                                    color = if (isSelected) TextPrimary else TextSecondary,
-                                    fontSize = 10.sp,
-                                    fontFamily = FontFamily.Monospace,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    maxLines = 1,
-                                    softWrap = false
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // --- RIGHT COLUMN: ZONE CLINICAL DETAILS & NASA 5 HAZARDS (55% width) ---
-            Column(
-                modifier = Modifier
-                    .weight(1.05f)
-                    .fillMaxHeight()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Selected Zone Detail Card
                 ZoneDetailCard(
                     zone = selectedZone,
                     zoneVitals = zoneVitals,
                     onOpenGuide = onOpenExamGuide,
                     onLogMetric = onLogMetric
                 )
+                HazardsMatrixSection(hazards = state.hazards)
+            }
+        }
+    }
+}
 
-                // NASA HRP 5 Hazards Exposure Matrix
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        text = "NASA HRP 5 HAZARDS EXPOSURE MATRIX",
-                        color = TextSecondary,
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold
-                    )
+@Composable
+private fun BodyMapHeader() {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = "ANATOMICAL BODY MAP",
+            color = TextPrimary,
+            fontSize = 22.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = (-0.02).sp
+        )
+        Text(
+            text = "SYSTEM TELEMETRY ZONES & NASA HRP 5 HAZARDS",
+            color = TextSecondary,
+            fontSize = 11.sp,
+            fontFamily = FontFamily.Monospace,
+            letterSpacing = 0.05.sp
+        )
+    }
+}
 
-                    state.hazards.forEach { hazard ->
-                        HazardCard(hazard = hazard)
+@Composable
+private fun ZoneSelectorGrid(
+    selectedZone: BodyZoneId,
+    onSelectZone: (BodyZoneId) -> Unit
+) {
+    val row1Zones = listOf(
+        BodyZoneId.HEAD_NEURO to "NEURO",
+        BodyZoneId.RESPIRATORY to "RESPIRATORY",
+        BodyZoneId.CARDIOVASCULAR to "CARDIO"
+    )
+    val row2Zones = listOf(
+        BodyZoneId.METABOLIC_RENAL to "METABOLIC",
+        BodyZoneId.MUSCULOSKELETAL to "MUSCULO",
+        BodyZoneId.IMMUNE_RADIATION to "IMMUNE/RAD"
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf(row1Zones, row2Zones).forEach { rowItems ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                rowItems.forEach { (zone, label) ->
+                    val isSelected = zone == selectedZone
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .defaultMinSize(minHeight = 48.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (isSelected) BgSurfaceHover else BgSurface)
+                            .border(
+                                width = if (isSelected) 1.5.dp else 1.dp,
+                                color = if (isSelected) BorderActive else BorderSubtle,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .clickable { onSelectZone(zone) }
+                            .padding(horizontal = 8.dp, vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = label,
+                            color = if (isSelected) BorderActive else TextSecondary,
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            maxLines = 1,
+                            softWrap = false
+                        )
                     }
                 }
             }
@@ -236,160 +245,173 @@ private fun ZoneDetailCard(
 ) {
     val firstVital = zoneVitals.firstOrNull()?.id ?: VitalId.HEART_RATE
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .background(GlassCardFillBrush)
-            .border(1.dp, GlassCardBorderBrush, RoundedCornerShape(8.dp))
-            .padding(12.dp)
+            .background(BgSurface)
+            .border(1.dp, BorderSubtle, RoundedCornerShape(8.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            // Zone Title & Description
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = zone.title,
+                color = TextPrimary,
+                fontSize = 18.sp,
+                fontFamily = FontFamily.SansSerif,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = zone.subtitle,
+                color = TextSecondary,
+                fontSize = 13.sp,
+                fontFamily = FontFamily.SansSerif
+            )
+        }
+
+        // Recommended Space Medical Exam
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(BgPrimary)
+                .border(1.dp, BorderSubtle, RoundedCornerShape(8.dp))
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Security,
+                contentDescription = "Recommended Exam",
+                tint = BorderActive,
+                modifier = Modifier.size(18.dp)
+            )
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    text = zone.title.uppercase(),
-                    color = TextPrimary,
-                    fontSize = 14.sp,
+                    text = "RECOMMENDED SPACE EXAM / TELEMEDICINE",
+                    color = TextSecondary,
+                    fontSize = 10.sp,
                     fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold
+                    letterSpacing = 0.05.sp
                 )
                 Text(
-                    text = zone.subtitle,
-                    color = TextSecondary,
-                    fontSize = 11.sp,
-                    fontFamily = FontFamily.SansSerif
+                    text = zone.recommendedUltrasound,
+                    color = TextPrimary,
+                    fontSize = 13.sp,
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
+        }
 
-            // Recommended Space Medical Exam (Frosted Glass Well)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0x12FFFFFF))
-                    .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(8.dp))
-                    .padding(8.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Security,
-                        contentDescription = "Exam",
-                        tint = TextPrimary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Column {
-                        Text(
-                            text = "Recommended Space Exam / Telemedicine:",
-                            color = TextSecondary,
-                            fontSize = 9.sp,
-                            fontFamily = FontFamily.Monospace
-                        )
-                        Text(
-                            text = zone.recommendedUltrasound,
-                            color = TextPrimary,
-                            fontSize = 11.sp,
-                            fontFamily = FontFamily.SansSerif,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-            }
-
-            // Associated Vitals telemetry row
-            if (zoneVitals.isNotEmpty()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    zoneVitals.forEach { vSnap ->
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(BgApp)
-                                .border(1.dp, BorderSubtle, RoundedCornerShape(4.dp))
-                                .padding(8.dp)
-                        ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = vSnap.shortLabel,
-                                        color = TextSecondary,
-                                        fontSize = 9.sp,
-                                        fontFamily = FontFamily.Monospace,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    StatusPill(status = vSnap.status, compact = true)
-                                }
-
-                                Row(
-                                    verticalAlignment = Alignment.Bottom,
-                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
-                                ) {
-                                    Text(
-                                        text = vSnap.displayValue,
-                                        color = TextPrimary,
-                                        fontSize = 15.sp,
-                                        fontFamily = FontFamily.Monospace,
-                                        fontWeight = FontWeight.Bold
-                                    )
+        // Associated Zone Vitals
+        if (zoneVitals.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                zoneVitals.forEach { vSnap ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .defaultMinSize(minHeight = 48.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(BgPrimary)
+                            .border(1.dp, BorderSubtle, RoundedCornerShape(8.dp))
+                            .clickable { onOpenGuide(vSnap.id) }
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                text = vSnap.title,
+                                color = TextSecondary,
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily.SansSerif
+                            )
+                            Row(
+                                verticalAlignment = Alignment.Bottom,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = if (vSnap.status == VitalStatus.UNAVAILABLE) "---" else vSnap.displayValue,
+                                    color = if (vSnap.status == VitalStatus.UNAVAILABLE) TextDisabled else TextPrimary,
+                                    fontSize = 18.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                if (vSnap.status != VitalStatus.UNAVAILABLE) {
                                     Text(
                                         text = vSnap.unit,
                                         color = TextSecondary,
-                                        fontSize = 10.sp,
+                                        fontSize = 11.sp,
                                         fontFamily = FontFamily.Monospace,
-                                        modifier = Modifier.padding(bottom = 1.dp)
+                                        modifier = Modifier.padding(bottom = 2.dp)
                                     )
                                 }
                             }
                         }
+
+                        StatusPill(status = vSnap.status, compact = true)
                     }
                 }
             }
+        }
 
-            // Action Buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+        // Action Buttons (48dp minimum touch targets)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedButton(
+                onClick = { onOpenGuide(firstVital) },
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = BgSurfaceHover,
+                    contentColor = TextPrimary
+                ),
+                border = BorderStroke(1.dp, BorderSubtle),
+                modifier = Modifier
+                    .weight(1f)
+                    .defaultMinSize(minHeight = 48.dp)
             ) {
-                OutlinedButton(
-                    onClick = { onOpenGuide(firstVital) },
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color(0x18FFFFFF),
-                        contentColor = TextPrimary
-                    ),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x40FFFFFF)),
-                    modifier = Modifier.weight(1f).defaultMinSize(minHeight = 38.dp)
-                ) {
-                    Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(13.dp))
-                    Spacer(modifier = Modifier.size(4.dp))
-                    Text("Exam Instructions", fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
-                }
-
-                OutlinedButton(
-                    onClick = { onLogMetric(firstVital) },
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color(0x10FFFFFF),
-                        contentColor = TextPrimary
-                    ),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x24FFFFFF)),
-                    modifier = Modifier.weight(1f).defaultMinSize(minHeight = 38.dp)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(13.dp))
-                    Spacer(modifier = Modifier.size(4.dp))
-                    Text("Log Reading", fontSize = 11.sp, fontFamily = FontFamily.Monospace)
-                }
+                Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Exam Guide", fontSize = 13.sp, fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold)
             }
+
+            Button(
+                onClick = { onLogMetric(firstVital) },
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = BorderActive,
+                    contentColor = BgPrimary
+                ),
+                modifier = Modifier
+                    .weight(1f)
+                    .defaultMinSize(minHeight = 48.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Log Reading", fontSize = 13.sp, fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun HazardsMatrixSection(hazards: List<HazardScore>) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            text = "NASA HRP 5 HAZARDS EXPOSURE MATRIX",
+            color = TextSecondary,
+            fontSize = 12.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.05.sp
+        )
+
+        hazards.forEach { hazard ->
+            HazardCard(hazard = hazard)
         }
     }
 }
@@ -397,21 +419,35 @@ private fun ZoneDetailCard(
 @Composable
 private fun HazardCard(hazard: HazardScore) {
     val statusColor = when (hazard.status) {
-        com.example.astrohealix.model.VitalStatus.NORMAL -> StatusNormal
-        com.example.astrohealix.model.VitalStatus.MONITOR -> StatusMonitor
-        com.example.astrohealix.model.VitalStatus.CRITICAL -> StatusCritical
-        com.example.astrohealix.model.VitalStatus.UNAVAILABLE -> com.example.astrohealix.ui.theme.StatusUnavailable
+        VitalStatus.NORMAL -> StatusNormal
+        VitalStatus.MONITOR -> StatusMonitor
+        VitalStatus.CRITICAL -> StatusCritical
+        VitalStatus.UNAVAILABLE -> StatusUnavailable
     }
+    val cardBg = if (hazard.status == VitalStatus.CRITICAL) CriticalSurfaceGlow else BgSurface
+    val cardBorder = if (hazard.status == VitalStatus.CRITICAL) StatusCritical else BorderSubtle
 
-    Box(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
+            .height(IntrinsicSize.Min)
             .clip(RoundedCornerShape(8.dp))
-            .background(GlassCardFillBrush)
-            .border(1.dp, GlassCardBorderBrush, RoundedCornerShape(8.dp))
-            .padding(10.dp)
+            .background(cardBg)
+            .border(1.dp, cardBorder, RoundedCornerShape(8.dp))
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(
+            modifier = Modifier
+                .width(4.dp)
+                .fillMaxHeight()
+                .background(statusColor)
+        )
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -420,19 +456,20 @@ private fun HazardCard(hazard: HazardScore) {
                 Text(
                     text = hazard.label.uppercase(),
                     color = TextPrimary,
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
                 )
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "RISK: ${hazard.score}/100",
-                        color = TextSecondary,
-                        fontSize = 10.sp,
+                        text = "${hazard.score}/100",
+                        color = statusColor,
+                        fontSize = 12.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold
                     )
@@ -443,8 +480,8 @@ private fun HazardCard(hazard: HazardScore) {
             Text(
                 text = hazard.summary,
                 color = TextSecondary,
-                fontSize = 10.sp,
-                lineHeight = 14.sp,
+                fontSize = 13.sp,
+                lineHeight = 18.sp,
                 fontFamily = FontFamily.SansSerif
             )
         }

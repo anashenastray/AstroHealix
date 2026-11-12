@@ -1,18 +1,15 @@
 package com.example.astrohealix.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,35 +18,39 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.astrohealix.model.HealthAlert
 import com.example.astrohealix.model.VitalStatus
-import com.example.astrohealix.ui.theme.GlassElevatedBorderBrush
-import com.example.astrohealix.ui.theme.GlassElevatedFillBrush
+import com.example.astrohealix.ui.theme.BgPrimary
+import com.example.astrohealix.ui.theme.BgSurface
+import com.example.astrohealix.ui.theme.BgSurfaceHover
+import com.example.astrohealix.ui.theme.BorderActive
+import com.example.astrohealix.ui.theme.BorderSubtle
+import com.example.astrohealix.ui.theme.CriticalSurfaceGlow
+import com.example.astrohealix.ui.theme.StatusCritical
+import com.example.astrohealix.ui.theme.StatusMonitor
+import com.example.astrohealix.ui.theme.StatusNormal
+import com.example.astrohealix.ui.theme.StatusUnavailable
 import com.example.astrohealix.ui.theme.TextPrimary
 import com.example.astrohealix.ui.theme.TextSecondary
-import com.example.astrohealix.ui.theme.TextTertiary
 
 @Composable
 fun AlertBanner(
@@ -57,261 +58,338 @@ fun AlertBanner(
     onAcknowledge: (String) -> Unit,
     onEscalate: (String) -> Unit,
     modifier: Modifier = Modifier,
-    currentIndex: Int = 1,
+    currentIndex: Int = 0,
     totalCount: Int = 1,
     onNextAlert: (() -> Unit)? = null,
     onPrevAlert: (() -> Unit)? = null
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    val isCritical = alert.severity == VitalStatus.CRITICAL
+    val accentColor = when (alert.severity) {
+        VitalStatus.CRITICAL -> StatusCritical
+        VitalStatus.MONITOR -> StatusMonitor
+        VitalStatus.NORMAL -> StatusNormal
+        VitalStatus.UNAVAILABLE -> StatusUnavailable
+    }
+    val containerBg = if (isCritical) CriticalSurfaceGlow else BgSurface
+    val borderColor = if (isCritical && !alert.isAcknowledged) {
+        StatusCritical.copy(alpha = 0.55f)
+    } else {
+        BorderSubtle
+    }
+    val cardShape = RoundedCornerShape(8.dp)
+    val priorityLabel = when (alert.severity) {
+        VitalStatus.CRITICAL -> "CRITICAL"
+        VitalStatus.MONITOR -> "MONITOR"
+        else -> alert.severity.name
+    }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(GlassElevatedFillBrush)
-            .border(1.dp, GlassElevatedBorderBrush, RoundedCornerShape(10.dp))
+            .alpha(if (alert.isAcknowledged) 0.65f else 1f)
+            .clip(cardShape)
+            .background(containerBg, cardShape)
+            .border(1.dp, borderColor, cardShape)
     ) {
-        // Left Specular Frosted Accent Bar
+        // 6px solid left border accent
         Box(
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .width(4.dp)
+                .width(6.dp)
                 .matchParentSize()
-                .background(Color(0x80FFFFFF))
+                .background(accentColor)
         )
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 14.dp, top = 8.dp, end = 10.dp, bottom = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+                .padding(start = 22.dp, top = 16.dp, end = 16.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Main Compact Strip Row (Always Visible)
+            // Header Row: Icon + Priority Pill + Timestamp + Optional Pager
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left: Severity Icon + Badge + Title + Rule (Pure Monochrome)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.weight(1f, fill = false)
                 ) {
                     Icon(
-                        imageVector = if (alert.severity == VitalStatus.CRITICAL) Icons.Default.Warning else Icons.Default.NotificationsActive,
-                        contentDescription = "Alert",
-                        tint = TextPrimary,
-                        modifier = Modifier.size(15.dp)
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = priorityLabel,
+                        tint = accentColor,
+                        modifier = Modifier.size(18.dp)
                     )
-
-                    // Severity tag
-                    Text(
-                        text = if (alert.severity == VitalStatus.CRITICAL) "[CRITICAL ALERT]" else "[MONITOR ALERT]",
-                        color = TextPrimary,
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        softWrap = false
+                    StatusPill(
+                        status = alert.severity,
+                        compact = true,
+                        customLabel = priorityLabel
                     )
-
                     Text(
-                        text = alert.title,
-                        color = TextPrimary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.SansSerif,
-                        maxLines = 1,
-                        softWrap = false
-                    )
-
-                    Text(
-                        text = "• ${alert.ruleApplied}",
+                        text = alert.triggeredAt,
                         color = TextSecondary,
-                        fontSize = 10.sp,
+                        fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
                         maxLines = 1,
                         softWrap = false
                     )
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                if (totalCount > 1 && (onPrevAlert != null || onNextAlert != null)) {
+                    val displayIndex = (currentIndex + 1).coerceIn(1, totalCount)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(BgSurfaceHover)
+                            .border(1.dp, BorderSubtle, RoundedCornerShape(6.dp))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .defaultMinSize(minWidth = 36.dp, minHeight = 36.dp)
+                                .clickable(enabled = onPrevAlert != null) { onPrevAlert?.invoke() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ChevronLeft,
+                                contentDescription = "Previous alert",
+                                tint = TextPrimary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        Text(
+                            text = "$displayIndex / $totalCount",
+                            color = TextPrimary,
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Box(
+                            modifier = Modifier
+                                .defaultMinSize(minWidth = 36.dp, minHeight = 36.dp)
+                                .clickable(enabled = onNextAlert != null) { onNextAlert?.invoke() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = "Next alert",
+                                tint = TextPrimary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+            }
 
-                // Right: Multi-alert Pager + Quick Ack Button + Expand Toggle
+            // Alert Title (16sp Bold) + Rule Tag
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = alert.title,
+                    color = TextPrimary,
+                    fontSize = 16.sp,
+                    fontFamily = FontFamily.SansSerif,
+                    fontWeight = FontWeight.Bold
+                )
+                if (alert.ruleApplied.isNotBlank()) {
+                    Text(
+                        text = alert.ruleApplied,
+                        color = TextSecondary,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            // Body: triggerEvent + guidance
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = alert.triggerEvent,
+                    color = TextPrimary,
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp,
+                    fontFamily = FontFamily.SansSerif
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(BgSurfaceHover)
+                        .border(1.dp, BorderSubtle, RoundedCornerShape(6.dp))
+                        .padding(12.dp)
+                ) {
+                    Text(
+                        text = alert.guidance,
+                        color = TextSecondary,
+                        fontSize = 13.sp,
+                        lineHeight = 19.sp,
+                        fontFamily = FontFamily.SansSerif
+                    )
+                }
+            }
+
+            // Acknowledged / Escalated status details
+            if (alert.isAcknowledged) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    // Pager counter if multiple alerts
-                    if (totalCount > 1) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(2.dp),
-                            modifier = Modifier
-                                .background(Color(0x18FFFFFF), RoundedCornerShape(6.dp))
-                                .border(1.dp, Color(0x30FFFFFF), RoundedCornerShape(6.dp))
-                                .padding(horizontal = 4.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = "<",
-                                color = TextSecondary,
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier
-                                    .clickable { onPrevAlert?.invoke() }
-                                    .padding(horizontal = 3.dp)
-                            )
-                            Text(
-                                text = "$currentIndex / $totalCount",
-                                color = TextPrimary,
-                                fontSize = 10.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = ">",
-                                color = TextSecondary,
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier
-                                    .clickable { onNextAlert?.invoke() }
-                                    .padding(horizontal = 3.dp)
-                            )
-                        }
-                    }
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "Acknowledged",
+                        tint = StatusNormal,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "Acknowledged: ${alert.acknowledgedAt ?: "Recorded"}",
+                        color = StatusNormal,
+                        fontSize = 12.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
 
-                    // Quick Acknowledge Status / Button (Apple Frosted Glass)
-                    if (alert.isAcknowledged) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(3.dp),
-                            modifier = Modifier
-                                .background(Color(0x1AFFFFFF), RoundedCornerShape(6.dp))
-                                .padding(horizontal = 6.dp, vertical = 3.dp)
-                        ) {
-                            Icon(Icons.Default.Check, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(12.dp))
-                            Text("ACKNOWLEDGED", color = TextPrimary, fontSize = 9.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
-                        }
-                    } else {
-                        OutlinedButton(
-                            onClick = { onAcknowledge(alert.id) },
-                            shape = RoundedCornerShape(6.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = Color(0x28FFFFFF),
-                                contentColor = TextPrimary
-                            ),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x50FFFFFF)),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 3.dp),
-                            modifier = Modifier.defaultMinSize(minWidth = 1.dp, minHeight = 28.dp)
-                        ) {
-                            Text("Acknowledge", fontSize = 10.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
-                        }
-                    }
-
-                    // Details Toggle button
+            if (alert.isEscalated) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(BgSurfaceHover)
+                        .border(1.dp, BorderActive.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                        .padding(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     Row(
-                        modifier = Modifier
-                            .background(Color(0x14FFFFFF), RoundedCornerShape(6.dp))
-                            .border(1.dp, Color(0x26FFFFFF), RoundedCornerShape(6.dp))
-                            .clickable { expanded = !expanded }
-                            .padding(horizontal = 6.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Escalated",
+                            tint = BorderActive,
+                            modifier = Modifier.size(14.dp)
+                        )
                         Text(
-                            text = if (expanded) "Hide" else "Protocol",
-                            color = TextPrimary,
-                            fontSize = 10.sp,
+                            text = "Escalated to Flight Surgeon • ${alert.escalatedAt ?: "Logged"}",
+                            color = BorderActive,
+                            fontSize = 12.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold
                         )
-                        Icon(
-                            imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = "Expand",
-                            tint = TextPrimary,
-                            modifier = Modifier.size(13.dp)
+                    }
+                    if (!alert.escalationNote.isNullOrBlank()) {
+                        Text(
+                            text = alert.escalationNote,
+                            color = TextSecondary,
+                            fontSize = 12.sp,
+                            fontFamily = FontFamily.SansSerif
                         )
                     }
                 }
             }
 
-            // Expandable Protocol & Surgeon Escalation Drawer
-            AnimatedVisibility(
-                visible = expanded,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        text = "Trigger Event: ${alert.triggerEvent}",
-                        color = TextSecondary,
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.SansSerif
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(Color(0x14FFFFFF))
-                            .border(1.dp, Color(0x28FFFFFF), RoundedCornerShape(6.dp))
-                            .padding(8.dp)
-                    ) {
-                        Text(
-                            text = "CLINICAL PROTOCOL: ${alert.guidance}",
-                            color = TextPrimary,
-                            fontSize = 11.sp,
-                            fontFamily = FontFamily.SansSerif,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Detected: ${alert.triggeredAt}",
-                            color = TextTertiary,
-                            fontSize = 10.sp,
-                            fontFamily = FontFamily.Monospace
-                        )
-
-                        if (alert.isEscalated) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(12.dp))
-                                Text("ESCALATED TO FLIGHT SURGEON", color = TextPrimary, fontSize = 10.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
-                            }
-                        } else {
-                            OutlinedButton(
+            // Action Strip (48dp minimum touch targets)
+            if (!alert.isAcknowledged || !alert.isEscalated) {
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val sideBySide = maxWidth >= 480.dp && !alert.isAcknowledged && !alert.isEscalated
+                    if (sideBySide) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            AcknowledgeCta(
+                                onClick = { onAcknowledge(alert.id) },
+                                modifier = Modifier.weight(1f)
+                            )
+                            EscalateCta(
+                                isCritical = isCritical,
                                 onClick = { onEscalate(alert.id) },
-                                shape = RoundedCornerShape(6.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    containerColor = Color(0x22FFFFFF),
-                                    contentColor = TextPrimary
-                                ),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x40FFFFFF)),
-                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                                modifier = Modifier.defaultMinSize(minWidth = 1.dp, minHeight = 28.dp)
-                            ) {
-                                Text("Escalate to Flight Surgeon", fontSize = 10.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    } else {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            if (!alert.isAcknowledged) {
+                                AcknowledgeCta(
+                                    onClick = { onAcknowledge(alert.id) },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                            if (!alert.isEscalated) {
+                                EscalateCta(
+                                    isCritical = isCritical,
+                                    onClick = { onEscalate(alert.id) },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun AcknowledgeCta(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = BorderActive,
+            contentColor = BgPrimary
+        ),
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
+        modifier = modifier.defaultMinSize(minHeight = 48.dp)
+    ) {
+        Text(
+            text = "Acknowledge & Record",
+            fontSize = 13.sp,
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            softWrap = false
+        )
+    }
+}
+
+@Composable
+private fun EscalateCta(
+    isCritical: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val accent = if (isCritical) StatusCritical else BorderSubtle
+    OutlinedButton(
+        onClick = onClick,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, accent),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = if (isCritical) StatusCritical else TextPrimary
+        ),
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
+        modifier = modifier.defaultMinSize(minHeight = 48.dp)
+    ) {
+        Text(
+            text = "Escalate to Flight Surgeon",
+            fontSize = 13.sp,
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            softWrap = false
+        )
     }
 }

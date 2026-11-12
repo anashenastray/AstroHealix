@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,10 +33,9 @@ import com.example.astrohealix.model.BodyZoneId
 import com.example.astrohealix.model.VitalCardSnapshot
 import com.example.astrohealix.model.VitalStatus
 import com.example.astrohealix.ui.theme.BgSurface
+import com.example.astrohealix.ui.theme.BgSurfaceHover
 import com.example.astrohealix.ui.theme.BorderActive
 import com.example.astrohealix.ui.theme.BorderSubtle
-import com.example.astrohealix.ui.theme.GlassCardBorderBrush
-import com.example.astrohealix.ui.theme.GlassCardFillBrush
 import com.example.astrohealix.ui.theme.StatusCritical
 import com.example.astrohealix.ui.theme.StatusMonitor
 import com.example.astrohealix.ui.theme.StatusNormal
@@ -55,9 +56,10 @@ fun BodyMapHUD(
     val zoneStatuses = BodyZoneId.entries.associateWith { zone ->
         val zoneVitals = vitals.filter { it.bodyZone == zone }
         when {
+            zoneVitals.isEmpty() -> VitalStatus.UNAVAILABLE
             zoneVitals.any { it.status == VitalStatus.CRITICAL } -> VitalStatus.CRITICAL
             zoneVitals.any { it.status == VitalStatus.MONITOR } -> VitalStatus.MONITOR
-            zoneVitals.any { it.status == VitalStatus.UNAVAILABLE } -> VitalStatus.UNAVAILABLE
+            zoneVitals.all { it.status == VitalStatus.UNAVAILABLE } -> VitalStatus.UNAVAILABLE
             else -> VitalStatus.NORMAL
         }
     }
@@ -67,15 +69,14 @@ fun BodyMapHUD(
             .fillMaxWidth()
             .height(heightDp.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(GlassCardFillBrush)
-            .border(1.dp, GlassCardBorderBrush, RoundedCornerShape(8.dp))
-            .padding(if (isMini) 8.dp else 12.dp)
+            .background(BgSurface)
+            .border(1.dp, BorderSubtle, RoundedCornerShape(8.dp))
+            .padding(if (isMini) 10.dp else 16.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Header: Render only in full mode to prevent collision
             if (!isMini) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -83,16 +84,17 @@ fun BodyMapHUD(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "ASTRONAUT PHYSIOLOGICAL MAP",
-                        color = TextPrimary,
+                        text = "PHYSIOLOGICAL TELEMETRY MAP",
+                        color = TextSecondary,
                         fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.05.sp
                     )
 
                     Text(
-                        text = "TARGET: ${selectedZone.title.uppercase()}",
-                        color = TextPrimary,
+                        text = selectedZone.title.uppercase(),
+                        color = BorderActive,
                         fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold
@@ -104,12 +106,12 @@ fun BodyMapHUD(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .pointerInput(Unit) {
+                    .pointerInput(onSelectZone) {
                         detectTapGestures { offset ->
                             val cx = size.width * 0.5f
                             val cy = size.height * 0.5f
                             val figH = size.height * 0.88f
-                            val figW = minOf(size.width * 0.40f, figH * 0.50f)
+                            val figW = minOf(size.width * 0.42f, figH * 0.52f)
 
                             val nodes = listOf(
                                 BodyZoneId.HEAD_NEURO to Offset(cx, cy - figH * 0.38f),
@@ -121,7 +123,7 @@ fun BodyMapHUD(
                             )
 
                             for ((zoneId, pos) in nodes) {
-                                if (hypot(offset.x - pos.x, offset.y - pos.y) <= 32.dp.toPx()) {
+                                if (hypot(offset.x - pos.x, offset.y - pos.y) <= 36.dp.toPx()) {
                                     onSelectZone(zoneId)
                                     return@detectTapGestures
                                 }
@@ -132,138 +134,160 @@ fun BodyMapHUD(
                 val cx = size.width * 0.5f
                 val cy = size.height * 0.5f
                 val figH = size.height * 0.88f
-                val figW = minOf(size.width * 0.40f, figH * 0.50f)
+                val figW = minOf(size.width * 0.42f, figH * 0.52f)
 
-                // Background Technical Crosshair Lines
+                // Technical Crosshair Grid Lines
                 drawLine(
-                    color = BorderSubtle.copy(alpha = 0.4f),
+                    color = BorderSubtle.copy(alpha = 0.6f),
                     start = Offset(cx, cy - figH * 0.50f),
                     end = Offset(cx, cy + figH * 0.50f),
                     strokeWidth = 1f
                 )
                 drawLine(
-                    color = BorderSubtle.copy(alpha = 0.3f),
+                    color = BorderSubtle.copy(alpha = 0.5f),
                     start = Offset(cx - figW * 0.9f, cy),
                     end = Offset(cx + figW * 0.9f, cy),
                     strokeWidth = 1f
                 )
 
-                // High-Tech Spacesuit Vector Path
+                // Spacesuit Silhouette Vector Path
                 val suitPath = Path().apply {
                     val topY = cy - figH * 0.48f
                     val botY = cy + figH * 0.46f
 
-                    // Helmet Arc
                     moveTo(cx - figW * 0.22f, topY + figH * 0.08f)
                     cubicTo(
                         cx - figW * 0.25f, topY,
                         cx + figW * 0.25f, topY,
                         cx + figW * 0.22f, topY + figH * 0.08f
                     )
-                    // Neck & Right Shoulder
                     lineTo(cx + figW * 0.45f, topY + figH * 0.15f)
-                    // Right Upper Arm
                     lineTo(cx + figW * 0.56f, topY + figH * 0.36f)
-                    // Right Forearm & Glove
                     lineTo(cx + figW * 0.44f, topY + figH * 0.38f)
                     lineTo(cx + figW * 0.34f, topY + figH * 0.24f)
-                    // Right Flank
                     lineTo(cx + figW * 0.28f, cy + figH * 0.06f)
-                    // Right Leg & Boot
                     lineTo(cx + figW * 0.30f, botY)
                     lineTo(cx + figW * 0.10f, botY)
-                    // Inseam
                     lineTo(cx, cy + figH * 0.16f)
-                    // Left Leg & Boot
                     lineTo(cx - figW * 0.10f, botY)
                     lineTo(cx - figW * 0.30f, botY)
-                    // Left Flank
                     lineTo(cx - figW * 0.28f, cy + figH * 0.06f)
-                    // Left Arm & Glove
                     lineTo(cx - figW * 0.34f, topY + figH * 0.24f)
                     lineTo(cx - figW * 0.44f, topY + figH * 0.38f)
                     lineTo(cx - figW * 0.56f, topY + figH * 0.36f)
-                    // Left Shoulder
                     lineTo(cx - figW * 0.45f, topY + figH * 0.15f)
                     close()
                 }
 
-                // Draw Spacesuit Outline (Apple Frosted Glass Specular Line)
                 drawPath(
                     path = suitPath,
-                    color = Color(0x35FFFFFF),
+                    color = TextSecondary.copy(alpha = 0.55f),
                     style = Stroke(width = 1.6f.dp.toPx())
                 )
 
-                // Helmet Visor (Apple Frosted Glass)
+                // Helmet Visor
                 drawOval(
-                    color = Color(0x22FFFFFF),
+                    color = BgSurfaceHover,
                     topLeft = Offset(cx - figW * 0.14f, cy - figH * 0.44f),
                     size = Size(figW * 0.28f, figH * 0.10f)
                 )
                 drawOval(
-                    color = Color(0x60FFFFFF),
+                    color = BorderActive.copy(alpha = 0.45f),
                     topLeft = Offset(cx - figW * 0.14f, cy - figH * 0.44f),
                     size = Size(figW * 0.28f, figH * 0.10f),
                     style = Stroke(width = 1.2f.dp.toPx())
                 )
 
-                // Chest Display Unit outline
+                // Chest Telemetry Pack
                 drawRect(
-                    color = Color(0x28FFFFFF),
+                    color = BorderSubtle,
                     topLeft = Offset(cx - figW * 0.16f, cy - figH * 0.24f),
                     size = Size(figW * 0.32f, figH * 0.12f),
-                    style = Stroke(width = 1f.dp.toPx())
+                    style = Stroke(width = 1.dp.toPx())
                 )
 
-                // Anatomical Nodes (Monochrome Glass Glow)
                 val nodes = listOf(
-                    Triple(BodyZoneId.HEAD_NEURO, Offset(cx, cy - figH * 0.38f), if (isMini) 12f else 17f),
-                    Triple(BodyZoneId.RESPIRATORY, Offset(cx - figW * 0.24f, cy - figH * 0.18f), if (isMini) 11f else 15f),
-                    Triple(BodyZoneId.CARDIOVASCULAR, Offset(cx + figW * 0.20f, cy - figH * 0.16f), if (isMini) 11f else 15f),
-                    Triple(BodyZoneId.IMMUNE_RADIATION, Offset(cx - figW * 0.42f, cy - figH * 0.02f), if (isMini) 11f else 14f),
-                    Triple(BodyZoneId.METABOLIC_RENAL, Offset(cx, cy + figH * 0.02f), if (isMini) 11f else 15f),
-                    Triple(BodyZoneId.MUSCULOSKELETAL, Offset(cx, cy + figH * 0.26f), if (isMini) 12f else 16f)
+                    Triple(BodyZoneId.HEAD_NEURO, Offset(cx, cy - figH * 0.38f), if (isMini) 10f else 15f),
+                    Triple(BodyZoneId.RESPIRATORY, Offset(cx - figW * 0.24f, cy - figH * 0.18f), if (isMini) 9f else 13f),
+                    Triple(BodyZoneId.CARDIOVASCULAR, Offset(cx + figW * 0.20f, cy - figH * 0.16f), if (isMini) 9f else 13f),
+                    Triple(BodyZoneId.IMMUNE_RADIATION, Offset(cx - figW * 0.42f, cy - figH * 0.02f), if (isMini) 9f else 13f),
+                    Triple(BodyZoneId.METABOLIC_RENAL, Offset(cx, cy + figH * 0.02f), if (isMini) 9f else 13f),
+                    Triple(BodyZoneId.MUSCULOSKELETAL, Offset(cx, cy + figH * 0.26f), if (isMini) 10f else 14f)
                 )
 
                 for ((zoneId, pos, radiusDp) in nodes) {
                     val isSelected = zoneId == selectedZone
+                    val zoneStatus = zoneStatuses[zoneId] ?: VitalStatus.NORMAL
+                    val statusColor = when (zoneStatus) {
+                        VitalStatus.CRITICAL -> StatusCritical
+                        VitalStatus.MONITOR -> StatusMonitor
+                        VitalStatus.UNAVAILABLE -> StatusUnavailable
+                        VitalStatus.NORMAL -> StatusNormal
+                    }
 
-                    // Outer halo when selected
                     if (isSelected) {
                         drawCircle(
-                            color = Color(0x35FFFFFF),
+                            color = BorderActive.copy(alpha = 0.22f),
                             radius = (radiusDp + 7f).dp.toPx(),
                             center = pos
                         )
                     }
 
-                    // Status Ring (Frosted Specular Glass Ring)
                     drawCircle(
-                        color = if (isSelected) Color(0xFFFFFFFF) else Color(0x60FFFFFF),
+                        color = statusColor.copy(alpha = 0.18f),
+                        radius = radiusDp.dp.toPx(),
+                        center = pos
+                    )
+
+                    drawCircle(
+                        color = if (isSelected) BorderActive else statusColor,
                         radius = radiusDp.dp.toPx(),
                         center = pos,
                         style = Stroke(width = if (isSelected) 2.2f.dp.toPx() else 1.5f.dp.toPx())
                     )
 
-                    // Core point
                     drawCircle(
-                        color = if (isSelected) Color(0xFFFFFFFF) else Color(0x30FFFFFF),
-                        radius = (radiusDp * 0.42f).dp.toPx(),
+                        color = statusColor,
+                        radius = (radiusDp * 0.45f).dp.toPx(),
                         center = pos
                     )
                 }
             }
 
             if (!isMini) {
-                Text(
-                    text = "Tap any anatomical sensor node to inspect space physiology, NASA hazards & guided exams",
-                    color = TextSecondary.copy(alpha = 0.7f),
-                    fontSize = 10.sp,
-                    fontFamily = FontFamily.SansSerif,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ZoneLegendDot(color = StatusNormal, label = "NOMINAL")
+                    ZoneLegendDot(color = StatusMonitor, label = "MONITOR")
+                    ZoneLegendDot(color = StatusCritical, label = "CRITICAL")
+                    ZoneLegendDot(color = StatusUnavailable, label = "NO DATA")
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun ZoneLegendDot(color: Color, label: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(color)
+        )
+        Text(
+            text = label,
+            color = TextSecondary,
+            fontSize = 10.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
