@@ -1,5 +1,6 @@
 package com.example.astrohealix.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,64 +9,98 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
-import androidx.compose.material.icons.filled.AccessibilityNew
+import androidx.compose.material.icons.filled.CheckBox
+import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.MonitorHeart
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.SelfImprovement
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.example.astrohealix.data.AstroRepository
-import com.example.astrohealix.model.MissionEnvironment
+import com.example.astrohealix.model.CatalogData
 import com.example.astrohealix.model.VitalId
 import com.example.astrohealix.ui.components.ExamGuideSheet
 import com.example.astrohealix.ui.components.QuickLogDialog
 import com.example.astrohealix.ui.components.SimulatorDialog
+import com.example.astrohealix.ui.screens.AlertsScreen
 import com.example.astrohealix.ui.screens.BodyMapScreen
 import com.example.astrohealix.ui.screens.DashboardScreen
 import com.example.astrohealix.ui.screens.LogsScreen
+import com.example.astrohealix.ui.screens.MoreScreen
+import com.example.astrohealix.ui.screens.ProfileScreen
+import com.example.astrohealix.ui.screens.ReportsScreen
+import com.example.astrohealix.ui.screens.SecondaryTopBar
 import com.example.astrohealix.ui.screens.TrendsScreen
-import com.example.astrohealix.ui.theme.BgApp
-import com.example.astrohealix.ui.theme.BgAppGradientEnd
-import com.example.astrohealix.ui.theme.BgAppGradientStart
+import com.example.astrohealix.ui.screens.VitalsScreen
+import com.example.astrohealix.ui.screens.WellbeingScreen
+import com.example.astrohealix.ui.theme.BgPrimary
 import com.example.astrohealix.ui.theme.BgSurface
+import com.example.astrohealix.ui.theme.BgSurfaceHover
 import com.example.astrohealix.ui.theme.BorderActive
 import com.example.astrohealix.ui.theme.BorderSubtle
+import com.example.astrohealix.ui.theme.CriticalSurfaceGlow
+import com.example.astrohealix.ui.theme.StatusCritical
 import com.example.astrohealix.ui.theme.TextPrimary
 import com.example.astrohealix.ui.theme.TextSecondary
-import com.example.astrohealix.ui.theme.VoidBlack
 
-enum class AppNavDestination(val label: String, val shortCode: String, val icon: ImageVector) {
-    DASHBOARD("Dashboard", "DASH", Icons.Default.Dashboard),
-    BODY_MAP("Body Map", "BODY", Icons.Default.AccessibilityNew),
-    TRENDS("Analytics", "TREND", Icons.AutoMirrored.Filled.ShowChart),
-    LOGS("Logs & Queue", "LOGS", Icons.Default.History)
+enum class BottomTab(val label: String, val icon: ImageVector) {
+    DASHBOARD("Dashboard", Icons.Default.Dashboard),
+    VITALS("Vitals", Icons.Default.MonitorHeart),
+    WELLBEING("Wellbeing", Icons.Default.SelfImprovement),
+    TRENDS("Trends", Icons.AutoMirrored.Filled.ShowChart),
+    MORE("More", Icons.Default.MoreHoriz)
+}
+
+enum class SecondaryDestination {
+    ALERTS,
+    REPORTS,
+    PROFILE,
+    LOGS,
+    BODY_MAP,
+    SIM_CONTROLS
 }
 
 @Composable
@@ -74,187 +109,249 @@ fun AstroHealixApp(
 ) {
     val uiState by repository.uiState.collectAsState()
 
-    var currentDestination by remember { mutableStateOf(AppNavDestination.DASHBOARD) }
+    var activeTab by remember { mutableStateOf(BottomTab.DASHBOARD) }
+    var secondaryDestination by remember { mutableStateOf<SecondaryDestination?>(null) }
+
     var selectedVitalForGuide by remember { mutableStateOf<VitalId?>(null) }
     var selectedVitalForTrends by remember { mutableStateOf(VitalId.HEART_RATE) }
     var showQuickLogDialog by remember { mutableStateOf(false) }
     var quickLogInitialVital by remember { mutableStateOf(VitalId.HYDRATION_ML) }
     var showSimulatorDialog by remember { mutableStateOf(false) }
+    var showEmergencyTriageDialog by remember { mutableStateOf(false) }
 
-    Row(
+    val borderColor = BorderSubtle
+
+    Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(BgAppGradientStart, VoidBlack, BgAppGradientEnd)))
-            .safeDrawingPadding()
-    ) {
-        // --- AEROSPACE LEFT NAVIGATION RAIL (Apple VisionOS Frosted Glass) ---
-        Box(
-            modifier = Modifier
-                .width(76.dp)
-                .fillMaxHeight()
-                .background(Color(0x1CFFFFFF))
-                .border(1.dp, Color(0x35FFFFFF))
-        ) {
-            Column(
+            .background(BgPrimary)
+            .safeDrawingPadding(),
+        containerColor = BgPrimary,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        bottomBar = {
+            NavigationBar(
+                containerColor = BgSurface,
+                tonalElevation = 0.dp,
+                windowInsets = WindowInsets(0, 0, 0, 0),
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(vertical = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceBetween
+                    .heightIn(min = 64.dp)
+                    .drawBehind {
+                        drawLine(
+                            color = borderColor,
+                            start = Offset.Zero,
+                            end = Offset(size.width, 0f),
+                            strokeWidth = 1.dp.toPx()
+                        )
+                    }
             ) {
-                // Top Brand Mark
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0x28FFFFFF))
-                            .border(1.dp, Color(0x55FFFFFF), RoundedCornerShape(8.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "AGY",
-                            color = TextPrimary,
-                            fontSize = 12.sp,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Text(
-                        text = "VITA-SYS",
-                        color = TextSecondary,
-                        fontSize = 8.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                // Middle Navigation Items (Apple Frosted Glass Pills)
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    AppNavDestination.entries.forEach { destination ->
-                        val isSelected = currentDestination == destination
-
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier
-                                .defaultMinSize(minWidth = 56.dp, minHeight = 52.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (isSelected) Color(0x40FFFFFF) else Color.Transparent)
-                                .border(
-                                    1.dp,
-                                    if (isSelected) Color(0x80FFFFFF) else Color.Transparent,
-                                    RoundedCornerShape(10.dp)
-                                )
-                                .clickable { currentDestination = destination }
-                                .padding(vertical = 8.dp, horizontal = 6.dp)
-                        ) {
+                BottomTab.entries.forEach { tab ->
+                    val isSelected = activeTab == tab && secondaryDestination == null
+                    NavigationBarItem(
+                        selected = isSelected,
+                        onClick = {
+                            activeTab = tab
+                            secondaryDestination = null
+                        },
+                        icon = {
                             Icon(
-                                imageVector = destination.icon,
-                                contentDescription = destination.label,
-                                tint = if (isSelected) TextPrimary else TextSecondary,
-                                modifier = Modifier.size(20.dp)
+                                imageVector = tab.icon,
+                                contentDescription = tab.label
                             )
+                        },
+                        label = {
                             Text(
-                                text = destination.shortCode,
-                                color = if (isSelected) TextPrimary else TextSecondary,
-                                fontSize = 9.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                text = tab.label,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                maxLines = 1
                             )
-                        }
-                    }
-                }
-
-                // Bottom Controls Trigger (Apple Frosted Glass)
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0x24FFFFFF))
-                            .border(1.dp, Color(0x50FFFFFF), RoundedCornerShape(8.dp))
-                            .clickable { showSimulatorDialog = true },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Tune,
-                            contentDescription = "Sim Controls",
-                            tint = TextPrimary,
-                            modifier = Modifier.size(16.dp)
+                        },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = BorderActive,
+                            selectedTextColor = BorderActive,
+                            unselectedIconColor = TextSecondary,
+                            unselectedTextColor = TextSecondary,
+                            indicatorColor = Color.Transparent
                         )
-                    }
-                    Text(
-                        text = "SIM",
-                        color = TextSecondary,
-                        fontSize = 8.sp,
-                        fontFamily = FontFamily.Monospace
                     )
                 }
             }
         }
-
-        // --- MAIN WORKSTATION CANVAS ---
+    ) { innerPadding ->
         Box(
             modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .background(BgApp)
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(BgPrimary)
         ) {
-            when (currentDestination) {
-                AppNavDestination.DASHBOARD -> DashboardScreen(
+            when (secondaryDestination) {
+                SecondaryDestination.ALERTS -> AlertsScreen(
                     state = uiState,
-                    onTapVital = { vitalId -> selectedVitalForGuide = vitalId },
-                    onAcknowledgeAlert = { alertId -> repository.acknowledgeAlert(alertId) },
-                    onEscalateAlert = { alertId -> repository.escalateAlert(alertId) },
-                    onToggleRoutine = { taskId -> repository.toggleRoutineTask(taskId) },
-                    onCycleEnvironment = {
-                        val nextEnv = when (uiState.environment) {
-                            MissionEnvironment.ORBITAL_STATION -> MissionEnvironment.DEEP_SPACE_TRANSIT
-                            MissionEnvironment.DEEP_SPACE_TRANSIT -> MissionEnvironment.SURFACE_BASE
-                            MissionEnvironment.SURFACE_BASE -> MissionEnvironment.ROVER_EVA
-                            MissionEnvironment.ROVER_EVA -> MissionEnvironment.ORBITAL_STATION
+                    onAcknowledge = { repository.acknowledgeAlert(it) },
+                    onEscalate = { repository.escalateAlert(it) },
+                    onBack = { secondaryDestination = null }
+                )
+
+                SecondaryDestination.REPORTS -> ReportsScreen(
+                    state = uiState,
+                    onGenerateReport = { periodHours -> repository.exportReportObject(periodHours) },
+                    onExportCsv = { repository.exportReportCsv() },
+                    onBack = { secondaryDestination = null }
+                )
+
+                SecondaryDestination.PROFILE -> ProfileScreen(
+                    state = uiState,
+                    onUpdateProfile = { name, missionName, missionDay ->
+                        repository.updateProfile(name, missionName, missionDay)
+                    },
+                    onUpdateBaseline = { vitalId, updated ->
+                        repository.updateBaseline(vitalId, updated)
+                    },
+                    onCompleteOnboarding = { repository.completeFirstTimeSetup() },
+                    onBack = { secondaryDestination = null }
+                )
+
+                SecondaryDestination.LOGS -> Column(modifier = Modifier.fillMaxSize()) {
+                    SecondaryTopBar(
+                        title = "LOGS & SYNC QUEUE",
+                        onBack = { secondaryDestination = null }
+                    )
+                    LogsScreen(
+                        state = uiState,
+                        onForceSync = { repository.reconcileOfflineQueue() },
+                        onExportCsv = { repository.exportReportCsv() },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                SecondaryDestination.BODY_MAP -> Column(modifier = Modifier.fillMaxSize()) {
+                    SecondaryTopBar(
+                        title = "BODY MAP",
+                        onBack = { secondaryDestination = null }
+                    )
+                    BodyMapScreen(
+                        state = uiState,
+                        onOpenExamGuide = { selectedVitalForGuide = it },
+                        onLogMetric = { vitalId ->
+                            quickLogInitialVital = vitalId
+                            showQuickLogDialog = true
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                SecondaryDestination.SIM_CONTROLS, null -> when (activeTab) {
+                    BottomTab.DASHBOARD -> DashboardScreen(
+                        state = uiState,
+                        onTapVital = { selectedVitalForGuide = it },
+                        onAcknowledgeAlert = { repository.acknowledgeAlert(it) },
+                        onEscalateAlert = { repository.escalateAlert(it) },
+                        onToggleRoutine = { repository.toggleRoutineTask(it) },
+                        onOpenQuickLog = { vitalId ->
+                            quickLogInitialVital = vitalId
+                            showQuickLogDialog = true
+                        },
+                        onOpenEmergencyTriage = { showEmergencyTriageDialog = true },
+                        onOpenAlerts = {
+                            activeTab = BottomTab.MORE
+                            secondaryDestination = SecondaryDestination.ALERTS
                         }
-                        repository.setEnvironment(nextEnv)
-                    },
-                    onOpenSimulator = { showSimulatorDialog = true },
-                    onOpenQuickLog = { vitalId ->
-                        quickLogInitialVital = vitalId
-                        showQuickLogDialog = true
-                    },
-                    onNavigateToLogs = { currentDestination = AppNavDestination.LOGS },
-                    onNavigateToBodyMap = { currentDestination = AppNavDestination.BODY_MAP }
-                )
+                    )
 
-                AppNavDestination.BODY_MAP -> BodyMapScreen(
-                    state = uiState,
-                    onOpenExamGuide = { vitalId -> selectedVitalForGuide = vitalId },
-                    onLogMetric = { vitalId ->
-                        quickLogInitialVital = vitalId
-                        showQuickLogDialog = true
+                    BottomTab.VITALS -> VitalsScreen(
+                        state = uiState,
+                        onTapVital = { selectedVitalForGuide = it },
+                        onViewTrends = { vitalId ->
+                            selectedVitalForTrends = vitalId
+                            activeTab = BottomTab.TRENDS
+                            secondaryDestination = null
+                        },
+                        onLogEntry = { vitalId ->
+                            quickLogInitialVital = vitalId
+                            showQuickLogDialog = true
+                        }
+                    )
+
+                    BottomTab.WELLBEING -> WellbeingScreen(
+                        state = uiState,
+                        onLogWellbeingCheckIn = { mood, stress, fatigue, notes ->
+                            repository.logWellbeingCheckIn(mood, stress, fatigue, notes)
+                        },
+                        onRequestConfidentialSupport = { category, note ->
+                            repository.requestConfidentialSupport(category, note)
+                        },
+                        onTapVital = { selectedVitalForGuide = it }
+                    )
+
+                    BottomTab.TRENDS -> TrendsScreen(
+                        state = uiState,
+                        initialVitalId = selectedVitalForTrends,
+                        getHistory = { repository.getTelemetryHistory(it) }
+                    )
+
+                    BottomTab.MORE -> MoreScreen(
+                        unacknowledgedAlertCount = uiState.alerts.count { !it.isAcknowledged },
+                        pendingSyncCount = uiState.pendingSyncQueue.size,
+                        scenarioTitle = uiState.scenario.title,
+                        reportedEmergencyCount = uiState.emergencyReportedSymptoms.size,
+                        onNavigate = { dest ->
+                            if (dest == SecondaryDestination.SIM_CONTROLS) {
+                                showSimulatorDialog = true
+                            } else {
+                                secondaryDestination = dest
+                            }
+                        },
+                        onOpenEmergencyTriage = { showEmergencyTriageDialog = true }
+                    )
+                }
+            }
+
+            // First-Time Setup / Onboarding Check Banner if pending
+            if (!uiState.hasCompletedOnboarding) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(BgSurface)
+                        .border(1.dp, BorderActive, RoundedCornerShape(8.dp))
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                text = "Complete First-Time Setup",
+                                color = TextPrimary,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Verify baseline thresholds & crew access.",
+                                color = TextSecondary,
+                                fontSize = 12.sp
+                            )
+                        }
+                        Spacer(modifier = Modifier.size(8.dp))
+                        Button(
+                            onClick = { repository.completeFirstTimeSetup() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = BorderActive,
+                                contentColor = BgPrimary
+                            ),
+                            modifier = Modifier.defaultMinSize(minHeight = 48.dp)
+                        ) {
+                            Text("Verify", fontWeight = FontWeight.Bold)
+                        }
                     }
-                )
-
-                AppNavDestination.TRENDS -> TrendsScreen(
-                    state = uiState,
-                    initialVitalId = selectedVitalForTrends,
-                    getHistory = { vitalId -> repository.getTelemetryHistory(vitalId) }
-                )
-
-                AppNavDestination.LOGS -> LogsScreen(
-                    state = uiState,
-                    onForceSync = { repository.reconcileOfflineQueue() },
-                    onExportCsv = { repository.exportReportCsv() }
-                )
+                }
             }
 
             // Quick Log Modal
@@ -273,16 +370,17 @@ fun AstroHealixApp(
                 SimulatorDialog(
                     activeScenario = uiState.scenario,
                     isOffline = uiState.isOffline,
-                    onSelectScenario = { scenario -> repository.setScenario(scenario) },
+                    onSelectScenario = { repository.setScenario(it) },
                     onToggleOffline = { repository.toggleOfflineLink() },
                     onDismiss = { showSimulatorDialog = false }
                 )
             }
 
-            // Astronaut Exam Guide Drawer
+            // Astronaut Exam Guide Sheet
             selectedVitalForGuide?.let { vitalId ->
                 ExamGuideSheet(
                     vitalId = vitalId,
+                    snapshot = uiState.vitals.find { it.id == vitalId },
                     onDismiss = { selectedVitalForGuide = null },
                     onLogNow = {
                         quickLogInitialVital = it
@@ -290,9 +388,157 @@ fun AstroHealixApp(
                     },
                     onViewTrends = {
                         selectedVitalForTrends = it
-                        currentDestination = AppNavDestination.TRENDS
+                        activeTab = BottomTab.TRENDS
+                        secondaryDestination = null
                     }
                 )
+            }
+
+            // Emergency Symptom Triage Dialog
+            if (showEmergencyTriageDialog) {
+                EmergencyTriageDialog(
+                    existingSymptoms = uiState.emergencyReportedSymptoms,
+                    onDismiss = { showEmergencyTriageDialog = false },
+                    onSubmit = { symptoms, note ->
+                        repository.reportEmergencySymptoms(symptoms, note)
+                        showEmergencyTriageDialog = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmergencyTriageDialog(
+    existingSymptoms: List<String>,
+    onDismiss: () -> Unit,
+    onSubmit: (symptoms: List<String>, note: String?) -> Unit
+) {
+    val selectedSymptoms = remember {
+        mutableStateListOf<String>().apply { addAll(existingSymptoms) }
+    }
+    var note by remember { mutableStateOf("") }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .widthIn(max = 480.dp)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(CriticalSurfaceGlow)
+                .border(1.dp, StatusCritical, RoundedCornerShape(12.dp))
+                .padding(20.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = "Emergency Triage",
+                    tint = StatusCritical,
+                    modifier = Modifier.size(22.dp)
+                )
+                Text(
+                    text = "Emergency Symptom Triage",
+                    color = TextPrimary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Text(
+                text = "Select any acute red-flag symptoms present. Submitting escalates immediately to Flight Surgeon & Crew Medical Officer.",
+                color = TextSecondary,
+                fontSize = 12.sp,
+                lineHeight = 18.sp
+            )
+
+            CatalogData.emergencySymptomsCatalog.forEach { symptom ->
+                val checked = symptom in selectedSymptoms
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .defaultMinSize(minHeight = 48.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (checked) StatusCritical.copy(alpha = 0.16f) else BgSurface)
+                        .border(
+                            1.dp,
+                            if (checked) StatusCritical else BorderSubtle,
+                            RoundedCornerShape(8.dp)
+                        )
+                        .clickable {
+                            if (checked) selectedSymptoms.remove(symptom) else selectedSymptoms.add(symptom)
+                        }
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        imageVector = if (checked) Icons.Default.CheckBox else Icons.Default.CheckBoxOutlineBlank,
+                        contentDescription = symptom,
+                        tint = if (checked) StatusCritical else TextSecondary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = symptom,
+                        color = TextPrimary,
+                        fontSize = 13.sp,
+                        fontWeight = if (checked) FontWeight.SemiBold else FontWeight.Normal
+                    )
+                }
+            }
+
+            OutlinedTextField(
+                value = note,
+                onValueChange = { note = it },
+                label = { Text("Symptom Context / Onset Note (Optional)", color = TextSecondary) },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = TextPrimary,
+                    unfocusedTextColor = TextPrimary,
+                    focusedContainerColor = BgSurfaceHover,
+                    unfocusedContainerColor = BgSurfaceHover,
+                    focusedBorderColor = StatusCritical,
+                    unfocusedBorderColor = BorderSubtle
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, BorderSubtle),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
+                    modifier = Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = 48.dp)
+                ) {
+                    Text("Cancel")
+                }
+
+                Button(
+                    onClick = {
+                        onSubmit(selectedSymptoms.toList(), note.trim().ifEmpty { null })
+                    },
+                    enabled = selectedSymptoms.isNotEmpty(),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = StatusCritical,
+                        contentColor = TextPrimary
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = 48.dp)
+                ) {
+                    Text("Escalate Now", fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
