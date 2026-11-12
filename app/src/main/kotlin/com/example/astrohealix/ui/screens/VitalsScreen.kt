@@ -101,14 +101,14 @@ fun VitalsScreen(
                 categoryVitals.all { it.status == VitalStatus.UNAVAILABLE } -> VitalStatus.UNAVAILABLE
                 else -> VitalStatus.NORMAL
             }
-            val statusDotColor = when (worstStatus) {
-                VitalStatus.CRITICAL -> StatusCritical
-                VitalStatus.MONITOR -> StatusMonitor
-                VitalStatus.UNAVAILABLE -> StatusUnavailable
-                VitalStatus.NORMAL -> StatusNormal
-            }
 
             item(key = "cat-header-${category.name}") {
+                val statusDotColor = when (worstStatus) {
+                    VitalStatus.CRITICAL -> StatusCritical
+                    VitalStatus.MONITOR -> StatusMonitor
+                    VitalStatus.UNAVAILABLE -> StatusUnavailable
+                    VitalStatus.NORMAL -> StatusNormal
+                }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()

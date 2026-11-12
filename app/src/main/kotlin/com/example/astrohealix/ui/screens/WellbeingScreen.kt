@@ -42,7 +42,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -56,14 +55,14 @@ import com.example.astrohealix.ui.theme.BgSurface
 import com.example.astrohealix.ui.theme.BgSurfaceHover
 import com.example.astrohealix.ui.theme.BorderActive
 import com.example.astrohealix.ui.theme.BorderSubtle
+import com.example.astrohealix.ui.theme.OnColoredButton
+import com.example.astrohealix.ui.theme.PrivateAccent
+import com.example.astrohealix.ui.theme.PrivateButtonContainer
+import com.example.astrohealix.ui.theme.PrivateSurface
 import com.example.astrohealix.ui.theme.StatusNormal
 import com.example.astrohealix.ui.theme.TextPrimary
 import com.example.astrohealix.ui.theme.TextSecondary
 import kotlin.math.roundToInt
-
-private val PrivateAccent = Color(0xFF9F85FF)
-private val PrivateSurface = Color(0xFF19162D)
-private val PrivateButtonContainer = Color(0xFF6A4FE0)
 
 @Composable
 fun WellbeingScreen(
@@ -364,7 +363,7 @@ fun WellbeingScreen(
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = PrivateButtonContainer,
-                        contentColor = TextPrimary
+                        contentColor = OnColoredButton
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -649,7 +648,7 @@ private fun ConfidentialSupportDialog(
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = PrivateButtonContainer,
-                        contentColor = TextPrimary
+                        contentColor = OnColoredButton
                     ),
                     modifier = Modifier
                         .weight(1f)

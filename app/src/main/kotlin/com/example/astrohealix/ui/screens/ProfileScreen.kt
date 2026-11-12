@@ -45,6 +45,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.astrohealix.data.AstroUiState
+import com.example.astrohealix.model.AppThemeMode
 import com.example.astrohealix.model.CatalogData
 import com.example.astrohealix.model.PersonalBaseline
 import com.example.astrohealix.model.VitalId
@@ -67,6 +68,7 @@ fun ProfileScreen(
     onUpdateBaseline: (VitalId, PersonalBaseline) -> Unit,
     onCompleteOnboarding: () -> Unit,
     onBack: (() -> Unit)? = null,
+    onSelectThemeMode: (AppThemeMode) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var nameInput by remember(state.astronaut.name) { mutableStateOf(state.astronaut.name) }
@@ -328,6 +330,60 @@ fun ProfileScreen(
                             },
                             fontWeight = FontWeight.SemiBold
                         )
+                    }
+                }
+            }
+
+            // 2b. Display Theme Selector Card
+            item(key = "display-theme") {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(BgSurface)
+                        .border(1.dp, BorderSubtle, RoundedCornerShape(8.dp))
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "DISPLAY THEME",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = BorderActive
+                    )
+                    Text(
+                        text = "Switch between Dark OLED, Light cabin console, or System default.",
+                        color = TextSecondary,
+                        fontSize = 12.sp
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AppThemeMode.entries.forEach { mode ->
+                            val isSelected = state.themeMode == mode
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .defaultMinSize(minHeight = 48.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSelected) BgSurfaceHover else BgPrimary)
+                                    .border(
+                                        1.dp,
+                                        if (isSelected) BorderActive else BorderSubtle,
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .clickable { onSelectThemeMode(mode) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = mode.label,
+                                    color = if (isSelected) BorderActive else TextPrimary,
+                                    fontSize = 12.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
+                            }
+                        }
                     }
                 }
             }

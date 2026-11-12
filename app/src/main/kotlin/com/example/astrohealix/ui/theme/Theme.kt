@@ -1,62 +1,103 @@
 package com.example.astrohealix.ui.theme
 
 import android.app.Activity
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.example.astrohealix.model.AppThemeMode
 
-private val DarkColorScheme = darkColorScheme(
-    primary = BorderActive,
-    onPrimary = BgPrimary,
-    primaryContainer = BgSurfaceHover,
-    onPrimaryContainer = TextPrimary,
-    secondary = StatusNormal,
-    onSecondary = BgPrimary,
-    secondaryContainer = StatusNormalBg,
-    onSecondaryContainer = StatusNormal,
-    tertiary = StatusMonitor,
-    onTertiary = BgPrimary,
-    tertiaryContainer = StatusMonitorBg,
-    onTertiaryContainer = StatusMonitor,
-    background = BgPrimary,
-    onBackground = TextPrimary,
-    surface = BgSurface,
-    onSurface = TextPrimary,
-    surfaceVariant = BgSurfaceHover,
-    onSurfaceVariant = TextSecondary,
-    outline = BorderSubtle,
-    outlineVariant = BorderSubtle,
-    error = StatusCritical,
-    onError = TextPrimary,
-    errorContainer = StatusCriticalBg,
-    onErrorContainer = StatusCritical
-)
+private fun buildColorScheme(colors: VitaColors): ColorScheme = if (colors.isDark) {
+    darkColorScheme(
+        primary = colors.borderActive,
+        onPrimary = colors.bgPrimary,
+        primaryContainer = colors.bgSurfaceHover,
+        onPrimaryContainer = colors.textPrimary,
+        secondary = colors.statusNormal,
+        onSecondary = colors.bgPrimary,
+        secondaryContainer = colors.statusNormalBg,
+        onSecondaryContainer = colors.statusNormal,
+        tertiary = colors.statusMonitor,
+        onTertiary = colors.bgPrimary,
+        tertiaryContainer = colors.statusMonitorBg,
+        onTertiaryContainer = colors.statusMonitor,
+        background = colors.bgPrimary,
+        onBackground = colors.textPrimary,
+        surface = colors.bgSurface,
+        onSurface = colors.textPrimary,
+        surfaceVariant = colors.bgSurfaceHover,
+        onSurfaceVariant = colors.textSecondary,
+        outline = colors.borderSubtle,
+        outlineVariant = colors.borderSubtle,
+        error = colors.statusCritical,
+        onError = colors.onColoredButton,
+        errorContainer = colors.statusCriticalBg,
+        onErrorContainer = colors.statusCritical
+    )
+} else {
+    lightColorScheme(
+        primary = colors.borderActive,
+        onPrimary = colors.onColoredButton,
+        primaryContainer = colors.bgSurfaceHover,
+        onPrimaryContainer = colors.textPrimary,
+        secondary = colors.statusNormal,
+        onSecondary = colors.onColoredButton,
+        secondaryContainer = colors.statusNormalBg,
+        onSecondaryContainer = colors.statusNormal,
+        tertiary = colors.statusMonitor,
+        onTertiary = colors.onColoredButton,
+        tertiaryContainer = colors.statusMonitorBg,
+        onTertiaryContainer = colors.statusMonitor,
+        background = colors.bgPrimary,
+        onBackground = colors.textPrimary,
+        surface = colors.bgSurface,
+        onSurface = colors.textPrimary,
+        surfaceVariant = colors.bgSurfaceHover,
+        onSurfaceVariant = colors.textSecondary,
+        outline = colors.borderSubtle,
+        outlineVariant = colors.borderSubtle,
+        error = colors.statusCritical,
+        onError = colors.onColoredButton,
+        errorContainer = colors.statusCriticalBg,
+        onErrorContainer = colors.statusCritical
+    )
+}
 
 @Composable
 fun AstroHealixTheme(
+    themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     content: @Composable () -> Unit
 ) {
+    val isDark = when (themeMode) {
+        AppThemeMode.SYSTEM -> isSystemInDarkTheme()
+        AppThemeMode.DARK -> true
+        AppThemeMode.LIGHT -> false
+    }
+    val activeColors = if (isDark) DarkVitaColors else LightVitaColors
+
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as? Activity)?.window
             window?.let {
-                it.statusBarColor = BgPrimary.toArgb()
-                it.navigationBarColor = BgPrimary.toArgb()
                 val controller = WindowCompat.getInsetsController(it, view)
-                controller.isAppearanceLightStatusBars = false
-                controller.isAppearanceLightNavigationBars = false
+                controller.isAppearanceLightStatusBars = !isDark
+                controller.isAppearanceLightNavigationBars = !isDark
             }
         }
     }
 
-    MaterialTheme(
-        colorScheme = DarkColorScheme,
-        typography = Typography,
-        content = content
-    )
+    CompositionLocalProvider(LocalVitaColors provides activeColors) {
+        MaterialTheme(
+            colorScheme = buildColorScheme(activeColors),
+            typography = vitaTypography(activeColors),
+            content = content
+        )
+    }
 }

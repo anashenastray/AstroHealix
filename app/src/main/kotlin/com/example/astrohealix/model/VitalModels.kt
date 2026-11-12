@@ -38,6 +38,12 @@ enum class DataQuality {
     INVALID
 }
 
+enum class AppThemeMode(val label: String) {
+    SYSTEM("System"),
+    DARK("Dark"),
+    LIGHT("Light")
+}
+
 enum class VitalCategory(val title: String, val vitalIds: List<VitalId>) {
     CARDIOVASCULAR("Cardiovascular", listOf(VitalId.HEART_RATE, VitalId.BLOOD_PRESSURE)),
     RESPIRATORY("Respiratory", listOf(VitalId.SPO2, VitalId.RESPIRATORY_RATE)),

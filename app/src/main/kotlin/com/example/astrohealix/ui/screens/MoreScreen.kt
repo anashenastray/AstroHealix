@@ -40,9 +40,11 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.astrohealix.model.AppThemeMode
 import com.example.astrohealix.ui.SecondaryDestination
 import com.example.astrohealix.ui.theme.BgPrimary
 import com.example.astrohealix.ui.theme.BgSurface
+import com.example.astrohealix.ui.theme.BgSurfaceHover
 import com.example.astrohealix.ui.theme.BorderActive
 import com.example.astrohealix.ui.theme.BorderSubtle
 import com.example.astrohealix.ui.theme.CriticalSurfaceGlow
@@ -61,7 +63,9 @@ fun MoreScreen(
     reportedEmergencyCount: Int,
     onNavigate: (SecondaryDestination) -> Unit,
     onOpenEmergencyTriage: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    themeMode: AppThemeMode = AppThemeMode.SYSTEM,
+    onSelectThemeMode: (AppThemeMode) -> Unit = {}
 ) {
     LazyColumn(
         modifier = modifier
@@ -148,6 +152,70 @@ fun MoreScreen(
             )
         }
 
+        item(key = "more-theme") {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(BgSurface)
+                    .border(1.dp, BorderSubtle, RoundedCornerShape(8.dp))
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "DISPLAY THEME",
+                        color = TextSecondary,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = themeMode.label.uppercase(),
+                        color = BorderActive,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AppThemeMode.entries.forEach { mode ->
+                        val isSelected = themeMode == mode
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .defaultMinSize(minHeight = 48.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (isSelected) BgSurfaceHover else BgPrimary)
+                                .border(
+                                    1.dp,
+                                    if (isSelected) BorderActive else BorderSubtle,
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .clickable { onSelectThemeMode(mode) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = mode.label,
+                                color = if (isSelected) BorderActive else TextPrimary,
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         item(key = "more-emergency-triage") {
             Row(
                 modifier = Modifier
@@ -210,9 +278,10 @@ private fun MoreMenuRow(
     subtitle: String,
     onClick: () -> Unit,
     badgeText: String? = null,
-    badgeColor: Color = BorderActive,
+    badgeColor: Color? = null,
     badgeBg: Color = Color.Transparent
 ) {
+    val resolvedBadgeColor = badgeColor ?: BorderActive
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -260,12 +329,12 @@ private fun MoreMenuRow(
                     modifier = Modifier
                         .clip(RoundedCornerShape(50))
                         .background(badgeBg)
-                        .border(1.dp, badgeColor.copy(alpha = 0.7f), RoundedCornerShape(50))
+                        .border(1.dp, resolvedBadgeColor.copy(alpha = 0.7f), RoundedCornerShape(50))
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
                         text = badgeText,
-                        color = badgeColor,
+                        color = resolvedBadgeColor,
                         fontSize = 10.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold

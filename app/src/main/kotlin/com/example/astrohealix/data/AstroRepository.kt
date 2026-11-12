@@ -2,6 +2,7 @@ package com.example.astrohealix.data
 
 import com.example.astrohealix.evaluator.HazardEvaluator
 import com.example.astrohealix.evaluator.VitalEvaluator
+import com.example.astrohealix.model.AppThemeMode
 import com.example.astrohealix.model.AstronautProfile
 import com.example.astrohealix.model.CatalogData
 import com.example.astrohealix.model.ConfidentialSupportRequest
@@ -54,7 +55,8 @@ data class AstroUiState(
     val baselines: Map<VitalId, PersonalBaseline> = CatalogData.VITAL_DEFINITIONS.mapValues { it.value.baseline },
     val wellbeingCheckIns: List<WellbeingCheckIn> = emptyList(),
     val supportRequests: List<ConfidentialSupportRequest> = emptyList(),
-    val emergencyReportedSymptoms: List<String> = emptyList()
+    val emergencyReportedSymptoms: List<String> = emptyList(),
+    val themeMode: AppThemeMode = AppThemeMode.SYSTEM
 )
 
 class AstroRepository(
@@ -73,6 +75,7 @@ class AstroRepository(
 
     private var astronautProfile = AstronautProfile()
     private var onboardingCompleted = true
+    private var activeThemeMode = AppThemeMode.SYSTEM
     private val customBaselines = CatalogData.VITAL_DEFINITIONS.mapValues { it.value.baseline }.toMutableMap()
     private val localLogs = mutableListOf<ManualLogEntry>()
     private val logTimestampsMs = mutableMapOf<String, Long>()
@@ -182,7 +185,8 @@ class AstroRepository(
                 baselines = customBaselines.toMap(),
                 wellbeingCheckIns = wellbeingHistory.toList(),
                 supportRequests = supportRequestsList.toList(),
-                emergencyReportedSymptoms = reportedSymptoms.toList()
+                emergencyReportedSymptoms = reportedSymptoms.toList(),
+                themeMode = activeThemeMode
             )
         }
     }
@@ -202,6 +206,13 @@ class AstroRepository(
     fun setEnvironment(env: MissionEnvironment) {
         synchronized(lock) {
             simulator.setEnvironment(env)
+            refreshStateLocked()
+        }
+    }
+
+    fun setThemeMode(mode: AppThemeMode) {
+        synchronized(lock) {
+            activeThemeMode = mode
             refreshStateLocked()
         }
     }

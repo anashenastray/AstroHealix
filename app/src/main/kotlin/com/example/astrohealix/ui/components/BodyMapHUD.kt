@@ -102,6 +102,15 @@ fun BodyMapHUD(
                 }
             }
 
+            val gridLineColor = BorderSubtle
+            val suitOutlineColor = TextSecondary
+            val visorFillColor = BgSurfaceHover
+            val activeRingColor = BorderActive
+            val normalDotColor = StatusNormal
+            val monitorDotColor = StatusMonitor
+            val criticalDotColor = StatusCritical
+            val unavailableDotColor = StatusUnavailable
+
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -138,13 +147,13 @@ fun BodyMapHUD(
 
                 // Technical Crosshair Grid Lines
                 drawLine(
-                    color = BorderSubtle.copy(alpha = 0.6f),
+                    color = gridLineColor.copy(alpha = 0.6f),
                     start = Offset(cx, cy - figH * 0.50f),
                     end = Offset(cx, cy + figH * 0.50f),
                     strokeWidth = 1f
                 )
                 drawLine(
-                    color = BorderSubtle.copy(alpha = 0.5f),
+                    color = gridLineColor.copy(alpha = 0.5f),
                     start = Offset(cx - figW * 0.9f, cy),
                     end = Offset(cx + figW * 0.9f, cy),
                     strokeWidth = 1f
@@ -181,18 +190,18 @@ fun BodyMapHUD(
 
                 drawPath(
                     path = suitPath,
-                    color = TextSecondary.copy(alpha = 0.55f),
+                    color = suitOutlineColor.copy(alpha = 0.55f),
                     style = Stroke(width = 1.6f.dp.toPx())
                 )
 
                 // Helmet Visor
                 drawOval(
-                    color = BgSurfaceHover,
+                    color = visorFillColor,
                     topLeft = Offset(cx - figW * 0.14f, cy - figH * 0.44f),
                     size = Size(figW * 0.28f, figH * 0.10f)
                 )
                 drawOval(
-                    color = BorderActive.copy(alpha = 0.45f),
+                    color = activeRingColor.copy(alpha = 0.45f),
                     topLeft = Offset(cx - figW * 0.14f, cy - figH * 0.44f),
                     size = Size(figW * 0.28f, figH * 0.10f),
                     style = Stroke(width = 1.2f.dp.toPx())
@@ -200,7 +209,7 @@ fun BodyMapHUD(
 
                 // Chest Telemetry Pack
                 drawRect(
-                    color = BorderSubtle,
+                    color = gridLineColor,
                     topLeft = Offset(cx - figW * 0.16f, cy - figH * 0.24f),
                     size = Size(figW * 0.32f, figH * 0.12f),
                     style = Stroke(width = 1.dp.toPx())
@@ -219,15 +228,15 @@ fun BodyMapHUD(
                     val isSelected = zoneId == selectedZone
                     val zoneStatus = zoneStatuses[zoneId] ?: VitalStatus.NORMAL
                     val statusColor = when (zoneStatus) {
-                        VitalStatus.CRITICAL -> StatusCritical
-                        VitalStatus.MONITOR -> StatusMonitor
-                        VitalStatus.UNAVAILABLE -> StatusUnavailable
-                        VitalStatus.NORMAL -> StatusNormal
+                        VitalStatus.CRITICAL -> criticalDotColor
+                        VitalStatus.MONITOR -> monitorDotColor
+                        VitalStatus.UNAVAILABLE -> unavailableDotColor
+                        VitalStatus.NORMAL -> normalDotColor
                     }
 
                     if (isSelected) {
                         drawCircle(
-                            color = BorderActive.copy(alpha = 0.22f),
+                            color = activeRingColor.copy(alpha = 0.22f),
                             radius = (radiusDp + 7f).dp.toPx(),
                             center = pos
                         )
@@ -240,7 +249,7 @@ fun BodyMapHUD(
                     )
 
                     drawCircle(
-                        color = if (isSelected) BorderActive else statusColor,
+                        color = if (isSelected) activeRingColor else statusColor,
                         radius = radiusDp.dp.toPx(),
                         center = pos,
                         style = Stroke(width = if (isSelected) 2.2f.dp.toPx() else 1.5f.dp.toPx())

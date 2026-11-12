@@ -124,5 +124,19 @@ class MainScreenTest {
         composeTestRule.onNodeWithText("VITA-SYS SIM").assertIsDisplayed()
         composeTestRule.onAllNodesWithText("[DEMO DATA]").assertCountEquals(1)
         composeTestRule.onNodeWithText("Close Controls").performClick()
+
+        // Display Theme switcher -> Light -> Dark -> System
+        composeTestRule.onNode(
+            androidx.compose.ui.test.SemanticsMatcher.keyIsDefined(
+                androidx.compose.ui.semantics.SemanticsProperties.VerticalScrollAxisRange
+            )
+        ).performScrollToNode(hasText("DISPLAY THEME"))
+        composeTestRule.onNodeWithText("DISPLAY THEME").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Light").performClick()
+        composeTestRule.onNodeWithText("LIGHT").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Dark").performClick()
+        composeTestRule.onNodeWithText("DARK").assertIsDisplayed()
+        composeTestRule.onNodeWithText("System").performClick()
+        composeTestRule.onNodeWithText("SYSTEM").assertIsDisplayed()
     }
 }

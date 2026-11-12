@@ -76,12 +76,14 @@ import com.example.astrohealix.ui.screens.SecondaryTopBar
 import com.example.astrohealix.ui.screens.TrendsScreen
 import com.example.astrohealix.ui.screens.VitalsScreen
 import com.example.astrohealix.ui.screens.WellbeingScreen
+import com.example.astrohealix.ui.theme.AstroHealixTheme
 import com.example.astrohealix.ui.theme.BgPrimary
 import com.example.astrohealix.ui.theme.BgSurface
 import com.example.astrohealix.ui.theme.BgSurfaceHover
 import com.example.astrohealix.ui.theme.BorderActive
 import com.example.astrohealix.ui.theme.BorderSubtle
 import com.example.astrohealix.ui.theme.CriticalSurfaceGlow
+import com.example.astrohealix.ui.theme.OnColoredButton
 import com.example.astrohealix.ui.theme.StatusCritical
 import com.example.astrohealix.ui.theme.TextPrimary
 import com.example.astrohealix.ui.theme.TextSecondary
@@ -119,9 +121,10 @@ fun AstroHealixApp(
     var showSimulatorDialog by remember { mutableStateOf(false) }
     var showEmergencyTriageDialog by remember { mutableStateOf(false) }
 
-    val borderColor = BorderSubtle
+    AstroHealixTheme(themeMode = uiState.themeMode) {
+        val borderColor = BorderSubtle
 
-    Scaffold(
+        Scaffold(
         modifier = Modifier
             .fillMaxSize()
             .background(BgPrimary)
@@ -208,6 +211,7 @@ fun AstroHealixApp(
                         repository.updateBaseline(vitalId, updated)
                     },
                     onCompleteOnboarding = { repository.completeFirstTimeSetup() },
+                    onSelectThemeMode = { repository.setThemeMode(it) },
                     onBack = { secondaryDestination = null }
                 )
 
@@ -294,6 +298,8 @@ fun AstroHealixApp(
                         pendingSyncCount = uiState.pendingSyncQueue.size,
                         scenarioTitle = uiState.scenario.title,
                         reportedEmergencyCount = uiState.emergencyReportedSymptoms.size,
+                        themeMode = uiState.themeMode,
+                        onSelectThemeMode = { repository.setThemeMode(it) },
                         onNavigate = { dest ->
                             if (dest == SecondaryDestination.SIM_CONTROLS) {
                                 showSimulatorDialog = true
@@ -406,6 +412,7 @@ fun AstroHealixApp(
                 )
             }
         }
+    }
     }
 }
 
@@ -531,7 +538,7 @@ private fun EmergencyTriageDialog(
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = StatusCritical,
-                        contentColor = TextPrimary
+                        contentColor = OnColoredButton
                     ),
                     modifier = Modifier
                         .weight(1f)

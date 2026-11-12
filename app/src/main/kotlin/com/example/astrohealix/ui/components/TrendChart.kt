@@ -174,6 +174,13 @@ fun TrendChart(
             }
 
             // Chart Canvas
+            val normalBandColor = StatusNormal
+            val criticalLineColor = StatusCritical
+            val monitorPointColor = StatusMonitor
+            val unavailableGapColor = StatusUnavailable
+            val activeStrokeColor = BorderActive
+            val holeSurfaceColor = BgSurface
+
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -220,21 +227,21 @@ fun TrendChart(
                     val nominalTopY = getY(baseline.nominalMax)
                     val nominalBottomY = getY(baseline.nominalMin)
                     drawRect(
-                        color = StatusNormal.copy(alpha = 0.14f),
+                        color = normalBandColor.copy(alpha = 0.14f),
                         topLeft = Offset(0f, nominalTopY),
                         size = Size(size.width, (nominalBottomY - nominalTopY).coerceAtLeast(2f))
                     )
 
                     // Nominal dashed boundary lines
                     drawLine(
-                        color = StatusNormal.copy(alpha = 0.45f),
+                        color = normalBandColor.copy(alpha = 0.45f),
                         start = Offset(0f, nominalTopY),
                         end = Offset(size.width, nominalTopY),
                         strokeWidth = 1.dp.toPx(),
                         pathEffect = dashEffect
                     )
                     drawLine(
-                        color = StatusNormal.copy(alpha = 0.45f),
+                        color = normalBandColor.copy(alpha = 0.45f),
                         start = Offset(0f, nominalBottomY),
                         end = Offset(size.width, nominalBottomY),
                         strokeWidth = 1.dp.toPx(),
@@ -245,7 +252,7 @@ fun TrendChart(
                     baseline.criticalHigh?.let { cHigh ->
                         val cy = getY(cHigh)
                         drawLine(
-                            color = StatusCritical.copy(alpha = 0.5f),
+                            color = criticalLineColor.copy(alpha = 0.5f),
                             start = Offset(0f, cy),
                             end = Offset(size.width, cy),
                             strokeWidth = 1.dp.toPx(),
@@ -255,7 +262,7 @@ fun TrendChart(
                     baseline.criticalLow?.let { cLow ->
                         val cy = getY(cLow)
                         drawLine(
-                            color = StatusCritical.copy(alpha = 0.5f),
+                            color = criticalLineColor.copy(alpha = 0.5f),
                             start = Offset(0f, cy),
                             end = Offset(size.width, cy),
                             strokeWidth = 1.dp.toPx(),
@@ -276,7 +283,7 @@ fun TrendChart(
                             val gx1 = getX(gapStartIdx)
                             val gx2 = getX(i)
                             drawRect(
-                                color = StatusUnavailable.copy(alpha = 0.18f),
+                                color = unavailableGapColor.copy(alpha = 0.18f),
                                 topLeft = Offset(gx1, 0f),
                                 size = Size((gx2 - gx1).coerceAtLeast(4.dp.toPx()), size.height)
                             )
@@ -286,7 +293,7 @@ fun TrendChart(
                     if (gapStartIdx != null) {
                         val gx1 = getX(gapStartIdx)
                         drawRect(
-                            color = StatusUnavailable.copy(alpha = 0.18f),
+                            color = unavailableGapColor.copy(alpha = 0.18f),
                             topLeft = Offset(gx1, 0f),
                             size = Size((size.width - gx1).coerceAtLeast(4.dp.toPx()), size.height)
                         )
@@ -306,7 +313,7 @@ fun TrendChart(
                             if (pathOpen) {
                                 drawPath(
                                     path = activePath,
-                                    color = BorderActive,
+                                    color = activeStrokeColor,
                                     style = Stroke(width = 2.dp.toPx())
                                 )
                                 activePath = Path()
@@ -321,7 +328,7 @@ fun TrendChart(
                             if (sawGapSinceLastValid && lastValidOffset != null) {
                                 // Dashed gap indicator across disconnected span
                                 drawLine(
-                                    color = StatusUnavailable.copy(alpha = 0.8f),
+                                    color = unavailableGapColor.copy(alpha = 0.8f),
                                     start = lastValidOffset,
                                     end = currOffset,
                                     strokeWidth = 1.5.dp.toPx(),
@@ -344,7 +351,7 @@ fun TrendChart(
                     if (pathOpen) {
                         drawPath(
                             path = activePath,
-                            color = BorderActive,
+                            color = activeStrokeColor,
                             style = Stroke(width = 2.dp.toPx())
                         )
                     }
@@ -369,14 +376,14 @@ fun TrendChart(
                             )
 
                         val ptColor = when {
-                            isCriticalPt -> StatusCritical
-                            isMonitorPt -> StatusMonitor
-                            else -> StatusNormal
+                            isCriticalPt -> criticalLineColor
+                            isMonitorPt -> monitorPointColor
+                            else -> normalBandColor
                         }
 
                         if (selectedPoint == pt) {
                             drawLine(
-                                color = BorderActive.copy(alpha = 0.5f),
+                                color = activeStrokeColor.copy(alpha = 0.5f),
                                 start = Offset(px, 0f),
                                 end = Offset(px, size.height),
                                 strokeWidth = 1.dp.toPx()
@@ -385,7 +392,7 @@ fun TrendChart(
 
                         if (isCriticalPt) {
                             drawCircle(
-                                color = StatusCritical.copy(alpha = 0.25f),
+                                color = criticalLineColor.copy(alpha = 0.25f),
                                 radius = 7.dp.toPx(),
                                 center = center
                             )
@@ -394,7 +401,7 @@ fun TrendChart(
                         if (pt.isEstimated) {
                             // Hollow circle for estimated points
                             drawCircle(
-                                color = BgSurface,
+                                color = holeSurfaceColor,
                                 radius = 4.dp.toPx(),
                                 center = center
                             )

@@ -1,5 +1,6 @@
 package com.example.astrohealix.data
 
+import com.example.astrohealix.model.AppThemeMode
 import com.example.astrohealix.model.DataQuality
 import com.example.astrohealix.model.NON_DIAGNOSTIC_DISCLAIMER
 import com.example.astrohealix.model.PersonalBaseline
@@ -233,5 +234,20 @@ class AstroRepositoryTest {
         assertTrue(csv.contains("DEMO DATA (SIMULATED)"))
         assertTrue(csv.contains("DATA UNAVAILABLE"))
         assertTrue(csv.contains(NON_DIAGNOSTIC_DISCLAIMER))
+    }
+
+    @Test
+    fun setThemeMode_updatesThemeModeStateBetweenSystemDarkAndLight() {
+        val repo = AstroRepository()
+        assertEquals(AppThemeMode.SYSTEM, repo.uiState.value.themeMode)
+
+        repo.setThemeMode(AppThemeMode.LIGHT)
+        assertEquals(AppThemeMode.LIGHT, repo.uiState.value.themeMode)
+
+        repo.setThemeMode(AppThemeMode.DARK)
+        assertEquals(AppThemeMode.DARK, repo.uiState.value.themeMode)
+
+        repo.setThemeMode(AppThemeMode.SYSTEM)
+        assertEquals(AppThemeMode.SYSTEM, repo.uiState.value.themeMode)
     }
 }
