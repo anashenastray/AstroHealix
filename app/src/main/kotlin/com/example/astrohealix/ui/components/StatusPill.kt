@@ -80,7 +80,7 @@ fun StatusPill(
         modifier = modifier
             .clip(pillShape)
             .background(style.bgColor, pillShape)
-            .border(1.dp, style.fgColor, pillShape)
+            .border(1.dp, style.fgColor.copy(alpha = 0.35f), pillShape)
             .padding(
                 horizontal = if (compact) 7.dp else 10.dp,
                 vertical = if (compact) 2.dp else 4.dp

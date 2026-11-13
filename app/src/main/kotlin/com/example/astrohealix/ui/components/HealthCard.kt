@@ -251,22 +251,35 @@ fun HealthCard(
                 }
 
                 // Footer: Trend Delta + Timestamp
+                val displayDelta = if (snapshot.status == VitalStatus.NORMAL &&
+                    (snapshot.deltaFromBaseline.equals("Base Delta: Nominal", ignoreCase = true) ||
+                        snapshot.deltaFromBaseline.equals("Nominal", ignoreCase = true))
+                ) {
+                    ""
+                } else {
+                    snapshot.deltaFromBaseline
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = snapshot.deltaFromBaseline,
-                        color = TextSecondary,
-                        fontSize = 12.sp,
-                        fontFamily = FontFamily.SansSerif,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 6.dp)
-                    )
+                    if (displayDelta.isNotBlank()) {
+                        Text(
+                            text = displayDelta,
+                            color = TextSecondary,
+                            fontSize = 12.sp,
+                            fontFamily = FontFamily.SansSerif,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 6.dp)
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,

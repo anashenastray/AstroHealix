@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
@@ -129,7 +130,7 @@ fun VitalsScreen(
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
-                                .clip(RoundedCornerShape(50))
+                                .clip(CircleShape)
                                 .background(statusDotColor)
                         )
                         Text(
@@ -161,73 +162,88 @@ fun VitalsScreen(
             }
 
             if (isExpanded) {
+                val vitalRows = categoryVitals.chunked(2)
                 items(
-                    items = categoryVitals,
-                    key = { "cat-${category.name}-vital-${it.id.name}" }
-                ) { snapshot ->
-                    Column(
+                    items = vitalRows,
+                    key = { row -> "cat-${category.name}-row-" + row.joinToString("-") { it.id.name } }
+                ) { rowVitals ->
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        HealthCard(
-                            snapshot = snapshot,
-                            onTapCard = onTapVital,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            OutlinedButton(
-                                onClick = { onViewTrends(snapshot.id) },
-                                shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(1.dp, BorderSubtle),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    containerColor = BgSurface,
-                                    contentColor = TextPrimary
-                                ),
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .defaultMinSize(minHeight = 48.dp)
+                        rowVitals.forEach { snapshot ->
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ShowChart,
-                                    contentDescription = "View Trends",
-                                    modifier = Modifier.size(16.dp)
+                                HealthCard(
+                                    snapshot = snapshot,
+                                    onTapCard = onTapVital,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
-                                Spacer(modifier = Modifier.size(6.dp))
-                                Text(
-                                    text = "View Trends",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
 
-                            OutlinedButton(
-                                onClick = { onLogEntry(snapshot.id) },
-                                shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(1.dp, BorderActive),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    containerColor = BgSurface,
-                                    contentColor = BorderActive
-                                ),
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .defaultMinSize(minHeight = 48.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = "Log Entry",
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.size(6.dp))
-                                Text(
-                                    text = "Log Entry",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    OutlinedButton(
+                                        onClick = { onViewTrends(snapshot.id) },
+                                        shape = RoundedCornerShape(6.dp),
+                                        border = BorderStroke(1.dp, BorderSubtle),
+                                        colors = ButtonDefaults.outlinedButtonColors(
+                                            containerColor = BgSurface,
+                                            contentColor = TextSecondary
+                                        ),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .defaultMinSize(minHeight = 44.dp),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.ShowChart,
+                                            contentDescription = "Trends",
+                                            modifier = Modifier.size(14.dp),
+                                            tint = BorderActive
+                                        )
+                                        Spacer(modifier = Modifier.size(4.dp))
+                                        Text(
+                                            text = "Trends",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+
+                                    OutlinedButton(
+                                        onClick = { onLogEntry(snapshot.id) },
+                                        shape = RoundedCornerShape(6.dp),
+                                        border = BorderStroke(1.dp, BorderActive.copy(alpha = 0.5f)),
+                                        colors = ButtonDefaults.outlinedButtonColors(
+                                            containerColor = BgSurface,
+                                            contentColor = BorderActive
+                                        ),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .defaultMinSize(minHeight = 44.dp),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = "Log",
+                                            modifier = Modifier.size(14.dp),
+                                            tint = BorderActive
+                                        )
+                                        Spacer(modifier = Modifier.size(4.dp))
+                                        Text(
+                                            text = "Log",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
                             }
+                        }
+                        if (rowVitals.size == 1) {
+                            Spacer(modifier = Modifier.weight(1f))
                         }
                     }
                 }

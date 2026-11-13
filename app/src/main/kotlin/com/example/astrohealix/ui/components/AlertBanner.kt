@@ -183,25 +183,21 @@ fun AlertBanner(
                 }
             }
 
-            // Alert Title (16sp Bold) + Rule Tag
+            // Alert Title (16sp Bold) — cleanly stripped of redundant status prefixes
+            val cleanTitle = alert.title
+                .removePrefix("MONITOR: ")
+                .removePrefix("ATTENTION REQUIRED: ")
+                .removePrefix("CRITICAL: ")
+                .trim()
+
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = alert.title,
+                    text = cleanTitle,
                     color = TextPrimary,
                     fontSize = 16.sp,
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = FontWeight.Bold
                 )
-                if (alert.ruleApplied.isNotBlank()) {
-                    Text(
-                        text = alert.ruleApplied,
-                        color = TextSecondary,
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
             }
 
             // Body: triggerEvent + guidance
@@ -209,26 +205,28 @@ fun AlertBanner(
                 Text(
                     text = alert.triggerEvent,
                     color = TextPrimary,
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp,
+                    fontSize = 13.5.sp,
+                    lineHeight = 19.sp,
                     fontFamily = FontFamily.SansSerif
                 )
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(BgSurfaceHover)
-                        .border(1.dp, BorderSubtle, RoundedCornerShape(6.dp))
-                        .padding(12.dp)
-                ) {
-                    Text(
-                        text = alert.guidance,
-                        color = TextSecondary,
-                        fontSize = 13.sp,
-                        lineHeight = 19.sp,
-                        fontFamily = FontFamily.SansSerif
-                    )
+                if (alert.guidance.isNotBlank()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(BgSurfaceHover)
+                            .border(1.dp, BorderSubtle, RoundedCornerShape(6.dp))
+                            .padding(10.dp)
+                    ) {
+                        Text(
+                            text = alert.guidance,
+                            color = TextSecondary,
+                            fontSize = 12.5.sp,
+                            lineHeight = 17.sp,
+                            fontFamily = FontFamily.SansSerif
+                        )
+                    }
                 }
             }
 

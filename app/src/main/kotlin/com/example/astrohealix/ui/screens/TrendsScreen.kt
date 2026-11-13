@@ -403,18 +403,14 @@ fun TrendsScreen(
                 )
             }
 
-            val ruleSummary = when (selectedVitalId) {
-                VitalId.HEART_RATE -> "Rule 5.2: Flags MONITOR at +15 BPM above personal upper baseline and CRITICAL at >= critical bound or +20 BPM rolling deviation."
-                VitalId.SLEEP_HOURS -> "3-Cycle Drift Rule: Escalates to CRITICAL after 3 consecutive sleep cycles below 6.0 hrs."
-                else -> "COLLECT -> VALIDATE -> STORE pipeline isolates disconnected gaps ($incompleteCount), estimated/unverified ($unverifiedCount), outdated ($outdatedCount), and invalid ($invalidCount) samples so missing data is never coerced to 0."
-            }
+            val conciseSummary = "${validPoints.size} verified samples (${integrityPct ?: 100}% integrity)" +
+                if (incompleteCount > 0) " • $incompleteCount gap(s)" else ""
 
             Text(
-                text = ruleSummary,
+                text = conciseSummary,
                 color = TextSecondary,
-                fontSize = 12.sp,
-                lineHeight = 17.sp,
-                fontFamily = FontFamily.SansSerif
+                fontSize = 11.5.sp,
+                fontFamily = FontFamily.Monospace
             )
         }
     }

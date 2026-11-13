@@ -56,7 +56,7 @@ data class AstroUiState(
     val wellbeingCheckIns: List<WellbeingCheckIn> = emptyList(),
     val supportRequests: List<ConfidentialSupportRequest> = emptyList(),
     val emergencyReportedSymptoms: List<String> = emptyList(),
-    val themeMode: AppThemeMode = AppThemeMode.SYSTEM
+    val themeMode: AppThemeMode = AppThemeMode.LIGHT
 )
 
 class AstroRepository(
@@ -75,7 +75,7 @@ class AstroRepository(
 
     private var astronautProfile = AstronautProfile()
     private var onboardingCompleted = true
-    private var activeThemeMode = AppThemeMode.SYSTEM
+    private var activeThemeMode = AppThemeMode.LIGHT
     private val customBaselines = CatalogData.VITAL_DEFINITIONS.mapValues { it.value.baseline }.toMutableMap()
     private val localLogs = mutableListOf<ManualLogEntry>()
     private val logTimestampsMs = mutableMapOf<String, Long>()

@@ -71,7 +71,7 @@ private fun buildColorScheme(colors: VitaColors): ColorScheme = if (colors.isDar
 
 @Composable
 fun AstroHealixTheme(
-    themeMode: AppThemeMode = AppThemeMode.SYSTEM,
+    themeMode: AppThemeMode = AppThemeMode.LIGHT,
     content: @Composable () -> Unit
 ) {
     val isDark = when (themeMode) {

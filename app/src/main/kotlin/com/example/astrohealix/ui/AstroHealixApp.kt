@@ -1,5 +1,13 @@
 package com.example.astrohealix.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -187,128 +195,141 @@ fun AstroHealixApp(
                 .padding(innerPadding)
                 .background(BgPrimary)
         ) {
-            when (secondaryDestination) {
-                SecondaryDestination.ALERTS -> AlertsScreen(
-                    state = uiState,
-                    onAcknowledge = { repository.acknowledgeAlert(it) },
-                    onEscalate = { repository.escalateAlert(it) },
-                    onBack = { secondaryDestination = null }
-                )
-
-                SecondaryDestination.REPORTS -> ReportsScreen(
-                    state = uiState,
-                    onGenerateReport = { periodHours -> repository.exportReportObject(periodHours) },
-                    onExportCsv = { repository.exportReportCsv() },
-                    onBack = { secondaryDestination = null }
-                )
-
-                SecondaryDestination.PROFILE -> ProfileScreen(
-                    state = uiState,
-                    onUpdateProfile = { name, missionName, missionDay ->
-                        repository.updateProfile(name, missionName, missionDay)
-                    },
-                    onUpdateBaseline = { vitalId, updated ->
-                        repository.updateBaseline(vitalId, updated)
-                    },
-                    onCompleteOnboarding = { repository.completeFirstTimeSetup() },
-                    onSelectThemeMode = { repository.setThemeMode(it) },
-                    onBack = { secondaryDestination = null }
-                )
-
-                SecondaryDestination.LOGS -> Column(modifier = Modifier.fillMaxSize()) {
-                    SecondaryTopBar(
-                        title = "LOGS & SYNC QUEUE",
+            AnimatedContent(
+                targetState = secondaryDestination to activeTab,
+                transitionSpec = {
+                    (fadeIn(animationSpec = tween(200, easing = LinearOutSlowInEasing)) +
+                        scaleIn(initialScale = 0.985f, animationSpec = tween(200, easing = LinearOutSlowInEasing)))
+                        .togetherWith(
+                            fadeOut(animationSpec = tween(160, easing = FastOutLinearInEasing))
+                        )
+                },
+                label = "screenTransition",
+                modifier = Modifier.fillMaxSize()
+            ) { (targetSec, targetTab) ->
+                when (targetSec) {
+                    SecondaryDestination.ALERTS -> AlertsScreen(
+                        state = uiState,
+                        onAcknowledge = { repository.acknowledgeAlert(it) },
+                        onEscalate = { repository.escalateAlert(it) },
                         onBack = { secondaryDestination = null }
                     )
-                    LogsScreen(
+
+                    SecondaryDestination.REPORTS -> ReportsScreen(
                         state = uiState,
-                        onForceSync = { repository.reconcileOfflineQueue() },
+                        onGenerateReport = { periodHours -> repository.exportReportObject(periodHours) },
                         onExportCsv = { repository.exportReportCsv() },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                SecondaryDestination.BODY_MAP -> Column(modifier = Modifier.fillMaxSize()) {
-                    SecondaryTopBar(
-                        title = "BODY MAP",
                         onBack = { secondaryDestination = null }
                     )
-                    BodyMapScreen(
-                        state = uiState,
-                        onOpenExamGuide = { selectedVitalForGuide = it },
-                        onLogMetric = { vitalId ->
-                            quickLogInitialVital = vitalId
-                            showQuickLogDialog = true
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
 
-                SecondaryDestination.SIM_CONTROLS, null -> when (activeTab) {
-                    BottomTab.DASHBOARD -> DashboardScreen(
+                    SecondaryDestination.PROFILE -> ProfileScreen(
                         state = uiState,
-                        onTapVital = { selectedVitalForGuide = it },
-                        onAcknowledgeAlert = { repository.acknowledgeAlert(it) },
-                        onEscalateAlert = { repository.escalateAlert(it) },
-                        onToggleRoutine = { repository.toggleRoutineTask(it) },
-                        onOpenQuickLog = { vitalId ->
-                            quickLogInitialVital = vitalId
-                            showQuickLogDialog = true
+                        onUpdateProfile = { name, missionName, missionDay ->
+                            repository.updateProfile(name, missionName, missionDay)
                         },
-                        onOpenEmergencyTriage = { showEmergencyTriageDialog = true },
-                        onOpenAlerts = {
-                            activeTab = BottomTab.MORE
-                            secondaryDestination = SecondaryDestination.ALERTS
-                        }
-                    )
-
-                    BottomTab.VITALS -> VitalsScreen(
-                        state = uiState,
-                        onTapVital = { selectedVitalForGuide = it },
-                        onViewTrends = { vitalId ->
-                            selectedVitalForTrends = vitalId
-                            activeTab = BottomTab.TRENDS
-                            secondaryDestination = null
+                        onUpdateBaseline = { vitalId, updated ->
+                            repository.updateBaseline(vitalId, updated)
                         },
-                        onLogEntry = { vitalId ->
-                            quickLogInitialVital = vitalId
-                            showQuickLogDialog = true
-                        }
-                    )
-
-                    BottomTab.WELLBEING -> WellbeingScreen(
-                        state = uiState,
-                        onLogWellbeingCheckIn = { mood, stress, fatigue, notes ->
-                            repository.logWellbeingCheckIn(mood, stress, fatigue, notes)
-                        },
-                        onRequestConfidentialSupport = { category, note ->
-                            repository.requestConfidentialSupport(category, note)
-                        },
-                        onTapVital = { selectedVitalForGuide = it }
-                    )
-
-                    BottomTab.TRENDS -> TrendsScreen(
-                        state = uiState,
-                        initialVitalId = selectedVitalForTrends,
-                        getHistory = { repository.getTelemetryHistory(it) }
-                    )
-
-                    BottomTab.MORE -> MoreScreen(
-                        unacknowledgedAlertCount = uiState.alerts.count { !it.isAcknowledged },
-                        pendingSyncCount = uiState.pendingSyncQueue.size,
-                        scenarioTitle = uiState.scenario.title,
-                        reportedEmergencyCount = uiState.emergencyReportedSymptoms.size,
-                        themeMode = uiState.themeMode,
+                        onCompleteOnboarding = { repository.completeFirstTimeSetup() },
                         onSelectThemeMode = { repository.setThemeMode(it) },
-                        onNavigate = { dest ->
-                            if (dest == SecondaryDestination.SIM_CONTROLS) {
-                                showSimulatorDialog = true
-                            } else {
-                                secondaryDestination = dest
-                            }
-                        },
-                        onOpenEmergencyTriage = { showEmergencyTriageDialog = true }
+                        onBack = { secondaryDestination = null }
                     )
+
+                    SecondaryDestination.LOGS -> Column(modifier = Modifier.fillMaxSize()) {
+                        SecondaryTopBar(
+                            title = "LOGS & SYNC QUEUE",
+                            onBack = { secondaryDestination = null }
+                        )
+                        LogsScreen(
+                            state = uiState,
+                            onForceSync = { repository.reconcileOfflineQueue() },
+                            onExportCsv = { repository.exportReportCsv() },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    SecondaryDestination.BODY_MAP -> Column(modifier = Modifier.fillMaxSize()) {
+                        SecondaryTopBar(
+                            title = "BODY MAP",
+                            onBack = { secondaryDestination = null }
+                        )
+                        BodyMapScreen(
+                            state = uiState,
+                            onOpenExamGuide = { selectedVitalForGuide = it },
+                            onLogMetric = { vitalId ->
+                                quickLogInitialVital = vitalId
+                                showQuickLogDialog = true
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    SecondaryDestination.SIM_CONTROLS, null -> when (targetTab) {
+                        BottomTab.DASHBOARD -> DashboardScreen(
+                            state = uiState,
+                            onTapVital = { selectedVitalForGuide = it },
+                            onAcknowledgeAlert = { repository.acknowledgeAlert(it) },
+                            onEscalateAlert = { repository.escalateAlert(it) },
+                            onToggleRoutine = { repository.toggleRoutineTask(it) },
+                            onOpenQuickLog = { vitalId ->
+                                quickLogInitialVital = vitalId
+                                showQuickLogDialog = true
+                            },
+                            onOpenEmergencyTriage = { showEmergencyTriageDialog = true },
+                            onOpenAlerts = {
+                                activeTab = BottomTab.MORE
+                                secondaryDestination = SecondaryDestination.ALERTS
+                            }
+                        )
+
+                        BottomTab.VITALS -> VitalsScreen(
+                            state = uiState,
+                            onTapVital = { selectedVitalForGuide = it },
+                            onViewTrends = { vitalId ->
+                                selectedVitalForTrends = vitalId
+                                activeTab = BottomTab.TRENDS
+                                secondaryDestination = null
+                            },
+                            onLogEntry = { vitalId ->
+                                quickLogInitialVital = vitalId
+                                showQuickLogDialog = true
+                            }
+                        )
+
+                        BottomTab.WELLBEING -> WellbeingScreen(
+                            state = uiState,
+                            onLogWellbeingCheckIn = { mood, stress, fatigue, notes ->
+                                repository.logWellbeingCheckIn(mood, stress, fatigue, notes)
+                            },
+                            onRequestConfidentialSupport = { category, note ->
+                                repository.requestConfidentialSupport(category, note)
+                            },
+                            onTapVital = { selectedVitalForGuide = it }
+                        )
+
+                        BottomTab.TRENDS -> TrendsScreen(
+                            state = uiState,
+                            initialVitalId = selectedVitalForTrends,
+                            getHistory = { repository.getTelemetryHistory(it) }
+                        )
+
+                        BottomTab.MORE -> MoreScreen(
+                            unacknowledgedAlertCount = uiState.alerts.count { !it.isAcknowledged },
+                            pendingSyncCount = uiState.pendingSyncQueue.size,
+                            scenarioTitle = uiState.scenario.title,
+                            reportedEmergencyCount = uiState.emergencyReportedSymptoms.size,
+                            themeMode = uiState.themeMode,
+                            onSelectThemeMode = { repository.setThemeMode(it) },
+                            onNavigate = { dest ->
+                                if (dest == SecondaryDestination.SIM_CONTROLS) {
+                                    showSimulatorDialog = true
+                                } else {
+                                    secondaryDestination = dest
+                                }
+                            },
+                            onOpenEmergencyTriage = { showEmergencyTriageDialog = true }
+                        )
+                    }
                 }
             }
 

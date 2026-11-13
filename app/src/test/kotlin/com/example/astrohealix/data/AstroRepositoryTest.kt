@@ -239,13 +239,13 @@ class AstroRepositoryTest {
     @Test
     fun setThemeMode_updatesThemeModeStateBetweenSystemDarkAndLight() {
         val repo = AstroRepository()
-        assertEquals(AppThemeMode.SYSTEM, repo.uiState.value.themeMode)
-
-        repo.setThemeMode(AppThemeMode.LIGHT)
         assertEquals(AppThemeMode.LIGHT, repo.uiState.value.themeMode)
 
         repo.setThemeMode(AppThemeMode.DARK)
         assertEquals(AppThemeMode.DARK, repo.uiState.value.themeMode)
+
+        repo.setThemeMode(AppThemeMode.LIGHT)
+        assertEquals(AppThemeMode.LIGHT, repo.uiState.value.themeMode)
 
         repo.setThemeMode(AppThemeMode.SYSTEM)
         assertEquals(AppThemeMode.SYSTEM, repo.uiState.value.themeMode)
