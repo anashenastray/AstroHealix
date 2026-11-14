@@ -164,3 +164,35 @@ val PrivateButtonContainer: Color
     @Composable @ReadOnlyComposable get() = LocalVitaColors.current.privateButtonContainer
 val OnColoredButton: Color
     @Composable @ReadOnlyComposable get() = LocalVitaColors.current.onColoredButton
+
+// ============================================================================
+// AURA HEALTH NORDIC MINIMAL DESIGN TOKENS (LIGHT & ACCENT PALETTE)
+// ============================================================================
+val AuraBgCanvas = Color(0xFFF4F6FA)
+val AuraCardPure = Color(0xFFFFFFFF)
+val AuraPillSurface = Color(0xFFEEF2F8)
+val AuraInkPrimary = Color(0xFF0B132B)
+val AuraInkSecondary = Color(0xFF6C7A9C)
+val AuraElectricBlue = Color(0xFF2563EB)
+val AuraCyanGlow = Color(0xFF06B6D4)
+val AuraMintVital = Color(0xFF10B981)
+val AuraCoralAlert = Color(0xFFF43F5E)
+val AuraAmberWarn = Color(0xFFF59E0B)
+val AuraVioletSleep = Color(0xFF8B5CF6)
+
+fun getAuraVitalColor(vitalTitle: String): Color {
+    val lower = vitalTitle.lowercase()
+    return when {
+        "heart" in lower || "hr" in lower || "cardio" in lower -> AuraMintVital
+        "blood pressure" in lower || "bp" in lower || "press" in lower -> AuraElectricBlue
+        "oxygen" in lower || "spo2" in lower || "sat" in lower -> AuraCyanGlow
+        "respirat" in lower || "rr" in lower -> AuraCoralAlert
+        "radiation" in lower || "msv" in lower || "dose" in lower -> AuraAmberWarn
+        "sleep" in lower -> AuraVioletSleep
+        "glucose" in lower || "sugar" in lower -> AuraCyanGlow
+        "hydration" in lower || "fluid" in lower -> AuraElectricBlue
+        "temp" in lower -> AuraAmberWarn
+        "mood" in lower || "wellbeing" in lower -> AuraVioletSleep
+        else -> AuraElectricBlue
+    }
+}

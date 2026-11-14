@@ -115,7 +115,7 @@ fun TrendsScreen(
             .fillMaxSize()
             .background(BgPrimary)
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Header + Timeframe Row
