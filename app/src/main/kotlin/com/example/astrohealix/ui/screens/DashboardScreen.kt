@@ -168,7 +168,7 @@ fun DashboardScreen(
                     ) {
                         Column {
                             Text(
-                                text = "VITA-SYS • ${state.astronaut.name}",
+                                text = "AeroMed-X • ${state.astronaut.name}",
                                 color = TextPrimary,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp

@@ -1,7 +1,7 @@
 package com.example.astrohealix.model
 
 const val NON_DIAGNOSTIC_DISCLAIMER =
-    "MISSION DECISION SUPPORT ONLY: AstroHealix assists crew self-assessment and trend monitoring during spaceflight. It does not replace clinical diagnosis by a Flight Surgeon or Crew Medical Officer."
+    "MISSION DECISION SUPPORT ONLY: AeroMed-X assists crew self-assessment and trend monitoring during spaceflight. It does not replace clinical diagnosis by a Flight Surgeon or Crew Medical Officer."
 
 enum class VitalId(val title: String, val shortLabel: String, val unit: String, val defaultSource: DataSource) {
     HEART_RATE("Heart Rate", "HEART RATE", "BPM", DataSource.SENSOR),
